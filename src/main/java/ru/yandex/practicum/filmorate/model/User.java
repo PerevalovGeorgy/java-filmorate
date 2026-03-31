@@ -1,9 +1,7 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.constraints.*;
 import lombok.*;
 
-import java.time.Duration;
 import java.time.LocalDate;
 
 @Data
@@ -11,11 +9,10 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Film {
-
+public class User {
     private Integer id;
+    private String email;
+    private String login;
     private String name;
-    private String description;
-    private LocalDate releaseDate;
-    private Duration duration;
+    private LocalDate birthday;
 }
