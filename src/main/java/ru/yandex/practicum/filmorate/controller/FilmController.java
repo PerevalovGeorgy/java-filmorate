@@ -85,18 +85,12 @@ public class FilmController {
         }
         log.debug("Дата релиза фильма валидна: {}", film.getReleaseDate());
 
-        if (film.getDuration() == null) {
-            log.warn("Валидация не пройдена: продолжительность фильма не указана");
-            throw new ValidationException("Продолжительность должна быть указана");
-        }
-
-        long durationMinutes = film.getDuration().toMinutes();
-        if (durationMinutes <= 0) {
-            log.warn("Валидация не пройдена: продолжительность фильма {} минут должна быть положительной",
-                    durationMinutes);
+        if (film.getDuration() <= 0) {
+            log.warn("Валидация не пройдена: продолжительность фильма {} должна быть положительной",
+                    film.getDuration());
             throw new ValidationException("Продолжительность должна быть положительной");
         }
-        log.debug("Продолжительность фильма валидна: {} минут", durationMinutes);
+        log.debug("Продолжительность фильма валидна: {} минут", film.getDuration());
     }
 
     private int getNextId() {
