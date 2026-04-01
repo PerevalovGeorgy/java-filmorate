@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -15,9 +14,8 @@ import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/users")
+@Slf4j
 public class UserController {
-
-    private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     private final Map<Integer, User> users = new HashMap<>();
     private int currentId = 0;
