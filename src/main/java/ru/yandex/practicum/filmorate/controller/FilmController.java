@@ -19,6 +19,7 @@ public class FilmController {
     private int currentId = 0;
     private static final int MAXTEXT = 200;
     private static final LocalDate MINDATE = LocalDate.of(1895, 12, 28);
+
     @GetMapping
     public Collection<Film> findAll() {
         log.debug("Запрос на получение всех фильмов");
