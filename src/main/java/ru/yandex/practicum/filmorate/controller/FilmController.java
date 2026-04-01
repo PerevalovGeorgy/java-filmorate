@@ -17,8 +17,8 @@ import java.util.Map;
 public class FilmController {
     private final Map<Integer, Film> films = new HashMap<>();
     private int currentId = 0;
-    private final int MAXTEXT = 200;
-    private final LocalDate MINDATE = LocalDate.of(1895, 12, 28);
+    private static final int MAXTEXT = 200;
+    private static final LocalDate MINDATE = LocalDate.of(1895, 12, 28);
     @GetMapping
     public Collection<Film> findAll() {
         log.debug("Запрос на получение всех фильмов");
