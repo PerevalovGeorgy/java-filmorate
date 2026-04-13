@@ -88,7 +88,6 @@ public class FilmService {
     public Collection<Film> getFilmsByLikes(Integer count) {
         List<Film> listFilms = new ArrayList<>(filmStorage.findAll());
 
-        // Сортировка по количеству лайков (от большего к меньшему)
         listFilms.sort((f1, f2) -> {
             int size1 = f1.likes != null ? f1.likes.size() : 0;
             int size2 = f2.likes != null ? f2.likes.size() : 0;
