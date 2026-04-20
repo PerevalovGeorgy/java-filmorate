@@ -64,4 +64,17 @@ public class UserController {
         log.debug("Получение общих друзей пользователей {} и {}", id, otherId);
         return userService.getCommonFriends(id, otherId);
     }
+
+    @GetMapping("/{id}/friends/pending")
+    public Collection<User> getPendingFriendRequests(@PathVariable Integer id) {
+        log.debug("Получение неподтверждённых запросов дружбы для пользователя {}", id);
+        return userService.getPendingFriendRequests(id);
+    }
+
+    @PutMapping("/{id}/friends/{friendId}/confirm")
+    public void confirmFriend(@PathVariable Integer id, @PathVariable Integer friendId) {
+        log.debug("Пользователь {} подтверждает дружбу с пользователем {}", id, friendId);
+        userService.confirmFriend(id, friendId);
+    }
+
 }

@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -72,10 +73,15 @@ public class UserService {
             throw new ValidationException("Нельзя добавить самого себя в друзья");
         }
 
-        user.addFriend(friendId);
-        friend.addFriend(userId);
-
-        log.info("Пользователь {} и {} стали друзьями", userId, friendId);
+        if (friend.getFriendshipStatus(userId) == FriendshipStatus.PENDING) {
+            friend.confirmFriendship(userId);
+            user.addFriend(friendId, FriendshipStatus.CONFIRMED);
+            log.info("Пользователь {} подтвердил дружбу с пользователем {}", friendId, userId);
+        } else {
+            // Иначе добавляем как неподтверждённую
+            user.addFriend(friendId);
+            log.info("Пользователь {} отправил запрос на добавление в друзья пользователю {}", userId, friendId);
+        }
     }
 
     public void removeFriend(Integer userId, Integer friendId) {
@@ -91,7 +97,7 @@ public class UserService {
     public Collection<User> getFriends(Integer userId) {
         User user = findById(userId);
 
-        return user.getFriends().stream()
+        return user.getConfirmedFriendIds().stream()
                 .map(this::findById)
                 .collect(Collectors.toList());
     }
@@ -100,12 +106,34 @@ public class UserService {
         User user = findById(userId);
         User other = findById(otherId);
 
-        Set<Integer> commonFriendsIds = new HashSet<>(user.getFriends());
-        commonFriendsIds.retainAll(other.getFriends());
+        Set<Integer> commonFriendsIds = new HashSet<>(user.getConfirmedFriendIds());
+        commonFriendsIds.retainAll(other.getConfirmedFriendIds());
 
         return commonFriendsIds.stream()
                 .map(this::findById)
                 .collect(Collectors.toList());
+    }
+
+    public Collection<User> getPendingFriendRequests(Integer userId) {
+        User user = findById(userId);
+
+        return userStorage.findAll().stream()
+                .filter(u -> u.getFriendshipStatus(userId) == FriendshipStatus.PENDING)
+                .collect(Collectors.toList());
+    }
+
+    public void confirmFriend(Integer userId, Integer friendId) {
+        User user = findById(userId);
+        User friend = findById(friendId);
+
+        if (friend.getFriendshipStatus(userId) != FriendshipStatus.PENDING) {
+            throw new ValidationException("Нет входящего запроса на добавление в друзья от пользователя " + friendId);
+        }
+
+        user.addFriend(friendId, FriendshipStatus.CONFIRMED);
+        friend.confirmFriendship(userId);
+
+        log.info("Пользователь {} подтвердил дружбу с пользователем {}", userId, friendId);
     }
 
     public boolean existsById(Integer id) {
