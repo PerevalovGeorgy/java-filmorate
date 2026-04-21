@@ -18,10 +18,10 @@ public class Film {
     private String description;
     private LocalDate releaseDate;
     private long duration;
-    public Set<Integer> likes;
+    private Set<Integer> likes;
 
     @Builder.Default
-    private Genre genres;
+    private Set<Genre> genres;
     private MpaRating mpaRating;
 
     public void addLike(Integer userId) {

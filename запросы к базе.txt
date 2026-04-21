@@ -24,3 +24,14 @@ SELECT f.*
 FROM films f
 JOIN FilmsGenre fg ON f.id = fg.filmId
 WHERE fg.genreId = 1;
+
+--5. Получение ID общих друзей для пользователей 1 и 2
+select u1.ifFriends
+(SELECT *
+FROM users
+WHERE idUser=1 and friendshipStatus = "CONFIRMED") as u1
+join
+(SELECT *
+FROM users
+WHERE idUser=2 and friendshipStatus = "CONFIRMED") as u2
+on u1.idFriends=u2.idFriends
