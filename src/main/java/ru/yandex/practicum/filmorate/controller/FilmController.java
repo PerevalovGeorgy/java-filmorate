@@ -1,20 +1,26 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.NewFilmDto;
+import ru.yandex.practicum.filmorate.dto.UpdateFilmDto;
+import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
+
 import java.util.Collection;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/films")
 @Slf4j
 public class FilmController {
     private final FilmService filmService;
+    private final FilmMapper filmMapper;
 
-    public FilmController(FilmService filmService) {
+    public FilmController(FilmService filmService, FilmMapper filmMapper) {
         this.filmService = filmService;
+        this.filmMapper = filmMapper;
     }
 
     @GetMapping
@@ -30,29 +36,29 @@ public class FilmController {
     }
 
     @PostMapping
-    public Film create(@RequestBody Film film) {
-        log.debug("Создание фильма: {}", film);
+    public Film create(@Valid @RequestBody NewFilmDto newFilmDto) {
+        log.debug("Создание фильма из DTO: {}", newFilmDto);
+        Film film = filmMapper.toModel(newFilmDto);
         return filmService.create(film);
     }
 
     @PutMapping
-    public Film update(@RequestBody Film newFilm) {
-        log.debug("Обновление фильма: {}", newFilm);
-        return filmService.update(newFilm);
+    public Film update(@Valid @RequestBody UpdateFilmDto updateFilmDto) {
+        log.debug("Обновление фильма из DTO: {}", updateFilmDto);
+        Film film = filmMapper.toModel(updateFilmDto);
+        return filmService.update(film);
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public Set<Integer> setLike(@PathVariable("id") Integer filmId,
-                                @PathVariable("userId") Integer userId) {
+    public void setLike(@PathVariable("id") Integer filmId, @PathVariable("userId") Integer userId) {
         log.debug("Пользователь {} ставит лайк фильму {}", userId, filmId);
-        return filmService.setLikeFilm(filmId, userId);
+        filmService.setLikeFilm(filmId, userId);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
-    public Set<Integer> deleteLike(@PathVariable("id") Integer filmId,
-                                   @PathVariable("userId") Integer userId) {
+    public void deleteLike(@PathVariable("id") Integer filmId, @PathVariable("userId") Integer userId) {
         log.debug("Пользователь {} удаляет лайк у фильма {}", userId, filmId);
-        return filmService.deleteLikeFilm(filmId, userId);
+        filmService.deleteLikeFilm(filmId, userId);
     }
 
     @GetMapping("/popular")

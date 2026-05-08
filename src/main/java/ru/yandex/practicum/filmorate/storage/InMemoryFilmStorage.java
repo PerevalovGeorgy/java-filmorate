@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-@Component
+@Component("inMemoryFilmStorage")
 @Slf4j
 public class InMemoryFilmStorage implements FilmStorage {
     private final Map<Integer, Film> films = new HashMap<>();
@@ -43,6 +43,19 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public boolean existsById(Integer id) {
         return films.containsKey(id);
+    }
+
+    @Override
+    public void addLike(Integer filmId, Integer userId) {
+    }
+
+    @Override
+    public void removeLike(Integer filmId, Integer userId) {
+    }
+
+    @Override
+    public Collection<Film> getPopularFilms(Integer count) {
+        return films.values();
     }
 
     private int getNextId() {

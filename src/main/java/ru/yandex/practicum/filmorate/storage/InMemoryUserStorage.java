@@ -9,9 +9,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-@Component
+@Component("inMemoryUserStorage")
 @Slf4j
 public class InMemoryUserStorage implements UserStorage {
+
     private final Map<Integer, User> users = new HashMap<>();
     private int currentId = 0;
 
@@ -30,14 +31,14 @@ public class InMemoryUserStorage implements UserStorage {
         int id = getNextId();
         user.setId(id);
         users.put(id, user);
-        log.debug("Пользователь создан с id: {}", id);
+        log.debug("Пользователь сохранен в памяти с id: {}", id);
         return user;
     }
 
     @Override
     public User update(User user) {
         users.put(user.getId(), user);
-        log.debug("Пользователь с id = {} обновлен", user.getId());
+        log.debug("Пользователь с id = {} обновлен в памяти", user.getId());
         return user;
     }
 
@@ -48,11 +49,32 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public void delete(Integer id) {
+        if (!users.containsKey(id)) {
+            throw new IllegalArgumentException("Пользователь с id = " + id + " не найден для удаления из памяти");
+        }
         users.remove(id);
-        log.debug("Пользователь с id = {} удален", id);
+        log.debug("Пользователь с id = {} удален из памяти", id);
     }
 
     private int getNextId() {
         return ++currentId;
+    }
+
+    @Override
+    public void addFriend(Integer userId, Integer friendId) {
+    }
+
+    @Override
+    public void removeFriend(Integer userId, Integer friendId) {
+    }
+
+    @Override
+    public Collection<User> getFriends(Integer userId) {
+        return java.util.Collections.emptyList();
+    }
+
+    @Override
+    public Collection<User> getCommonFriends(Integer userId, Integer otherId) {
+        return java.util.Collections.emptyList();
     }
 }
