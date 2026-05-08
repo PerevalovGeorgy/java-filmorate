@@ -14,12 +14,11 @@ import java.util.*;
 @Repository
 public class FilmRepository extends BaseRepository<Film> {
 
-    // ИСПРАВЛЕНО: добавлено локальное поле для устранения ошибок компиляции
     private final JdbcTemplate jdbc;
 
     public FilmRepository(JdbcTemplate jdbc, FilmRowMapper mapper) {
         super(jdbc, mapper);
-        this.jdbc = jdbc; // Фиксируем зависимость в поле класса
+        this.jdbc = jdbc;
     }
 
     public Collection<Film> findAll() {
@@ -40,7 +39,6 @@ public class FilmRepository extends BaseRepository<Film> {
         String sql = "INSERT INTO films (name, description, releaseDate, duration, mpaRating_id) VALUES (?, ?, ?, ?, ?)";
         Integer mpaId = (film.getMpa() != null) ? film.getMpa().getId() : null;
 
-        // Приведение типа long к int/Object для безопасной вставки в базу данных
         int id = insert(sql, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), mpaId);
         film.setId(id);
         saveGenres(film);
