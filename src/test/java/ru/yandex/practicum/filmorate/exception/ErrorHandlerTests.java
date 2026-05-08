@@ -4,63 +4,20 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpInputMessage;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(ErrorHandlerTests.ExceptionTestController.class)
+@WebMvcTest(ExceptionTestController.class)
 @Import(ErrorHandler.class)
 class ErrorHandlerTests {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @RestController
-    public static class ExceptionTestController {
-
-        @GetMapping("/test/validation")
-        public void throwValidation() {
-            throw new ru.yandex.practicum.filmorate.exception.ValidationException("Неверные параметры бизнес-логики");
-        }
-
-        @GetMapping("/test/user-not-found")
-        public void throwUserNotFound() {
-            throw new UserNotFoundException("Пользователь с id=42 не найден");
-        }
-
-        @GetMapping("/test/movie-not-found")
-        public void throwMovieNotFound() {
-            throw new MoviePresenceInListException("Фильм с id=777 не найден");
-        }
-
-        @GetMapping("/test/illegal-argument")
-        public void throwIllegalArgument() {
-            throw new IllegalArgumentException("Некорректный аргумент метода");
-        }
-
-        @GetMapping("/test/runtime")
-        public void throwRuntime() {
-            throw new RuntimeException("Непредвиденная критическая ошибка");
-        }
-
-        @GetMapping("/test/json-parse-mpa")
-        public void throwJsonMpa() {
-            HttpInputMessage inputMessage = new MockHttpInputMessage("{\"id\":10}".getBytes());
-            throw new HttpMessageNotReadableException(
-                    "JSON parse error: Cannot construct instance of ru.yandex.practicum.filmorate.model.MpaRating, problem: Unknown MpaRating id: 10",
-                    new IllegalArgumentException("Unknown MpaRating id: 10"),
-                    inputMessage
-            );
-        }
-    }
 
     @Test
     void shouldCreateErrorResponse() {
@@ -121,7 +78,7 @@ class ErrorHandlerTests {
     void handleIllegalArgumentException_ShouldReturn400() throws Exception {
         mockMvc.perform(get("/test/illegal-argument"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Некорректный аргументBox запроса"))
+                .andExpect(jsonPath("$.error").value("Некорректный аргумент запроса"))
                 .andExpect(jsonPath("$.description").value("Некорректный аргумент метода"));
     }
 
