@@ -14,8 +14,11 @@ import java.util.*;
 @Repository
 public class FilmRepository extends BaseRepository<Film> {
 
+    private final JdbcTemplate jdbc;
+
     public FilmRepository(JdbcTemplate jdbc, FilmRowMapper mapper) {
         super(jdbc, mapper);
+        this.jdbc = jdbc;
     }
 
     public Collection<Film> findAll() {
@@ -82,14 +85,18 @@ public class FilmRepository extends BaseRepository<Film> {
         if (film.getGenres() == null || film.getGenres().isEmpty()) return;
         String sql = "INSERT INTO FilmsGenre (filmId, genreId) VALUES (?, ?)";
         List<Genre> genreList = new ArrayList<>(film.getGenres());
+
         jdbc.batchUpdate(sql, new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
                 ps.setInt(1, film.getId());
                 ps.setInt(2, genreList.get(i).getId());
             }
+
             @Override
-            public int getBatchSize() { return genreList.size(); }
+            public int getBatchSize() {
+                return genreList.size();
+            }
         });
     }
 
@@ -105,11 +112,13 @@ public class FilmRepository extends BaseRepository<Film> {
         if (films.isEmpty()) return;
         String sql = "SELECT fg.filmId, fg.genreId FROM FilmsGenre fg ORDER BY fg.genreId";
         Map<Integer, LinkedHashSet<Genre>> map = new HashMap<>();
+
         jdbc.query(sql, (rs) -> {
             int fId = rs.getInt("filmId");
             int gId = rs.getInt("genreId");
             map.computeIfAbsent(fId, k -> new LinkedHashSet<>()).add(Genre.valueOf(gId));
         });
+
         films.forEach(f -> f.setGenres(map.getOrDefault(f.getId(), new LinkedHashSet<>())));
     }
 }
