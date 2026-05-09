@@ -45,14 +45,14 @@ public class FilmService {
     public Collection<FilmDto> findAll() {
         log.info("Запрос на получение всех фильмов");
         return filmStorage.findAll().stream()
-                .map(film -> filmMapper.toDto(film))
+                .map(filmMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     public FilmDto findById(Integer id) {
         log.info("Запрос на получение фильма с id={}", id);
         return filmStorage.findById(id)
-                .map(film -> filmMapper.toDto(film))
+                .map(filmMapper::toDto)
                 .orElseThrow(() -> new MoviePresenceInListException("Фильм с id=" + id + " не найден"));
     }
 
@@ -129,7 +129,7 @@ public class FilmService {
     public Collection<FilmDto> getFilmsByLikes(Integer count) {
         log.info("Запрос на получение популярных фильмов, лимит: {}", count);
         return filmStorage.getPopularFilms(count).stream()
-                .map(film -> filmMapper.toDto(film))
+                .map(filmMapper::toDto)
                 .collect(Collectors.toList());
     }
 

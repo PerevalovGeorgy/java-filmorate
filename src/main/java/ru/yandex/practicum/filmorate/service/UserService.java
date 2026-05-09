@@ -27,14 +27,14 @@ public class UserService {
     public Collection<UserDto> findAll() {
         log.info("Запрос на получение списка всех пользователей");
         return userStorage.findAll().stream()
-                .map(user -> userMapper.toDto(user))
+                .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     public UserDto findById(Integer id) {
         log.info("Запрос на получение пользователя с id={}", id);
         return userStorage.findById(id)
-                .map(user -> userMapper.toDto(user))
+                .map(userMapper::toDto)
                 .orElseThrow(() -> {
                     log.warn("Пользователь с id={} не найден", id);
                     return new NotFoundException("Пользователь с id " + id + " не найден");
@@ -84,7 +84,7 @@ public class UserService {
         log.info("Запрос на получение списка друзей пользователя с id={}", userId);
         checkUserExists(userId);
         return userStorage.getFriends(userId).stream()
-                .map(user -> userMapper.toDto(user))
+                .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -93,7 +93,7 @@ public class UserService {
         checkUserExists(userId);
         checkUserExists(otherId);
         return userStorage.getCommonFriends(userId, otherId).stream()
-                .map(user -> userMapper.toDto(user))
+                .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
 
