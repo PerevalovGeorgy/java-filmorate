@@ -8,9 +8,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @Component
-public class MpaRowMapper implements RowMapper<MpaRating> {
+public class MpaRatingRowMapper implements RowMapper<MpaRating> {
+
     @Override
     public MpaRating mapRow(ResultSet rs, int rowNum) throws SQLException {
-        return MpaRating.valueOf(rs.getInt("id"));
+        return MpaRating.builder()
+                .id(rs.getInt("id"))
+                .name(rs.getString("name"))
+                .build();
     }
 }

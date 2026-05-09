@@ -5,4 +5,41 @@ Template repository for Filmorate project.
 
 ![Схема БД](./база.png)
 
-# Запросы к БД находятся в файле "запросы к базе" в корне проекта
+# Запросы к БД 
+-- 1. Получить всех друзей пользователя
+SELECT u.*
+FROM users u
+JOIN friendships f ON (f.idUser = u.id OR f.idFriends = u.id)
+WHERE (f.idUser = 1 OR f.idFriends = 1)
+AND f.friendshipStatus = 2;
+
+-- 2. Получить популярные фильмы (топ-10 по лайкам)
+SELECT f.*, COUNT(l.userId) as likes_count
+FROM films f
+LEFT JOIN filmLikes l ON f.id = l.filmId
+GROUP BY f.id
+ORDER BY likes_count DESC
+LIMIT 10;
+
+-- 3. Получить все жанры фильма
+SELECT g.*
+FROM Genre g
+JOIN FilmsGenre fg ON g.id = fg.genreId
+WHERE fg.filmId = 1;
+
+-- 4. Получить фильмы по жанру
+SELECT f.*
+FROM films f
+JOIN FilmsGenre fg ON f.id = fg.filmId
+WHERE fg.genreId = 1;
+
+--5. Получение ID общих друзей для пользователей 1 и 2
+select u1.ifFriends
+(SELECT *
+FROM users
+WHERE idUser=1 and friendshipStatus = "CONFIRMED") as u1
+join
+(SELECT *
+FROM users
+WHERE idUser=2 and friendshipStatus = "CONFIRMED") as u2
+on u1.idFriends=u2.idFriends

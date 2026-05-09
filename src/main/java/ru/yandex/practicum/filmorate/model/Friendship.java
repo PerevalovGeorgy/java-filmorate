@@ -12,11 +12,10 @@ import lombok.NoArgsConstructor;
 public class Friendship {
     private Integer userId;
     private Integer friendId;
-    private FriendshipStatus status;
 
-    public Friendship(Integer userId, Integer friendId) {
-        this.userId = userId;
-        this.friendId = friendId;
-        this.status = FriendshipStatus.PENDING;
-    }
+    @Builder.Default
+    private FriendshipStatus status = FriendshipStatus.builder()
+            .id(1)
+            .name("PENDING")
+            .build();
 }

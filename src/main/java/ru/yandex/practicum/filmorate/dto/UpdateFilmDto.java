@@ -2,9 +2,6 @@ package ru.yandex.practicum.filmorate.dto;
 
 import jakarta.validation.constraints.*;
 import lombok.*;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.MpaRating;
-
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
 
@@ -13,7 +10,7 @@ import java.util.LinkedHashSet;
 @NoArgsConstructor
 @Builder
 public class UpdateFilmDto {
-    @NotNull(message = "ID фильма обязателен для обновления")
+    @NotNull(message = "Id должен быть указан для обновления")
     private Integer id;
 
     @NotBlank(message = "Название фильма не может быть пустым")
@@ -28,9 +25,8 @@ public class UpdateFilmDto {
     @Positive(message = "Продолжительность фильма должна быть положительной")
     private long duration;
 
-    @NotNull(message = "Рейтинг MPA должен быть указан")
-    private MpaRating mpa;
+    private MpaRatingDto mpa;
 
     @Builder.Default
-    private LinkedHashSet<Genre> genres = new LinkedHashSet<>();
+    private LinkedHashSet<GenreDto> genres = new LinkedHashSet<>();
 }

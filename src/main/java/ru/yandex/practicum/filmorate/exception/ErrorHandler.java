@@ -7,14 +7,21 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 @Slf4j
 public class ErrorHandler {
 
-    @ExceptionHandler({ru.yandex.practicum.filmorate.exception.ValidationException.class})
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFoundException(NotFoundException e) {
+        log.error("Ресурс не найден: {}", e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("Ресурс не найден", e.getMessage()));
+    }
+
+    @ExceptionHandler(ru.yandex.practicum.filmorate.exception.ValidationException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(ru.yandex.practicum.filmorate.exception.ValidationException e) {
         log.error("Ошибка валидации бизнес-логики: {}", e.getMessage());
         return ResponseEntity

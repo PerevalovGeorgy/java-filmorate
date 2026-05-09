@@ -1,15 +1,24 @@
-MERGE INTO FriendshipStatus KEY(id) VALUES (1, 'Неподтвержденная');
-MERGE INTO FriendshipStatus KEY(id) VALUES (2, 'Подтвержденная');
+DELETE FROM film_genres;
+DELETE FROM film_likes;
+DELETE FROM friendships;
+DELETE FROM films;
+DELETE FROM users;
 
-MERGE INTO MpaRating KEY(id) VALUES (1, 'G');
-MERGE INTO MpaRating KEY(id) VALUES (2, 'PG');
-MERGE INTO MpaRating KEY(id) VALUES (3, 'PG-13');
-MERGE INTO MpaRating KEY(id) VALUES (4, 'R');
-MERGE INTO MpaRating KEY(id) VALUES (5, 'NC-17');
+ALTER TABLE users ALTER COLUMN id RESTART WITH 1;
+ALTER TABLE films ALTER COLUMN id RESTART WITH 1;
 
-MERGE INTO Genre KEY (id) VALUES (1, 'Комедия');
-MERGE INTO Genre KEY (id) VALUES (2, 'Драма');
-MERGE INTO Genre KEY (id) VALUES (3, 'Мультфильм');
-MERGE INTO Genre KEY (id) VALUES (4, 'Триллер');
-MERGE INTO Genre KEY (id) VALUES (5, 'Документальный');
-MERGE INTO Genre KEY (id) VALUES (6, 'Боевик');
+MERGE INTO friendship_statuses KEY (id) VALUES (1, 'PENDING');
+MERGE INTO friendship_statuses KEY (id) VALUES (2, 'CONFIRMED');
+
+MERGE INTO mpa_ratings KEY (id) VALUES (1, 'G');
+MERGE INTO mpa_ratings KEY (id) VALUES (2, 'PG');
+MERGE INTO mpa_ratings KEY (id) VALUES (3, 'PG-13');
+MERGE INTO mpa_ratings KEY (id) VALUES (4, 'R');
+MERGE INTO mpa_ratings KEY (id) VALUES (5, 'NC-17');
+
+MERGE INTO genres KEY (id) VALUES (1, 'Комедия');
+MERGE INTO genres KEY (id) VALUES (2, 'Драма');
+MERGE INTO genres KEY (id) VALUES (3, 'Мультфильм');
+MERGE INTO genres KEY (id) VALUES (4, 'Триллер');
+MERGE INTO genres KEY (id) VALUES (5, 'Документальный');
+MERGE INTO genres KEY (id) VALUES (6, 'Боевик');

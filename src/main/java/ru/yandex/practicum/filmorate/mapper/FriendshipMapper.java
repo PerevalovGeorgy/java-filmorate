@@ -8,15 +8,29 @@ import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 
 @Component
 public class FriendshipMapper {
+
     public Friendship toModel(NewFriendshipDto dto) {
+        if (dto == null) {
+            return null;
+        }
+
+        FriendshipStatus pendingStatus = FriendshipStatus.builder()
+                .id(1)
+                .name("PENDING")
+                .build();
+
         return Friendship.builder()
                 .userId(dto.getUserId())
                 .friendId(dto.getFriendId())
-                .status(FriendshipStatus.PENDING)
+                .status(pendingStatus)
                 .build();
     }
 
     public FriendshipDto toDto(Friendship friendship) {
+        if (friendship == null) {
+            return null;
+        }
+
         return FriendshipDto.builder()
                 .userId(friendship.getUserId())
                 .friendId(friendship.getFriendId())

@@ -3,7 +3,7 @@ package ru.yandex.practicum.filmorate.dal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.dal.mappers.MpaRowMapper;
+import ru.yandex.practicum.filmorate.dal.mappers.MpaRatingRowMapper;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 
 import java.util.Collection;
@@ -14,7 +14,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class MpaRepository {
     private final JdbcTemplate jdbc;
-    private final MpaRowMapper mpaRowMapper;
+    private final MpaRatingRowMapper mpaRowMapper;
 
     public Collection<MpaRating> findAll() {
         String sql = "SELECT id FROM MpaRating ORDER BY id ASC";

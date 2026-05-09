@@ -2,9 +2,6 @@ package ru.yandex.practicum.filmorate.dto;
 
 import jakarta.validation.constraints.*;
 import lombok.*;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.MpaRating;
-
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
 
@@ -26,8 +23,8 @@ public class NewFilmDto {
     private long duration;
 
     @NotNull(message = "Рейтинг MPA должен быть указан")
-    private MpaRating mpa;
+    private MpaRatingDto mpa;
 
     @Builder.Default
-    private LinkedHashSet<Genre> genres = new LinkedHashSet<>();
+    private LinkedHashSet<GenreDto> genres = new LinkedHashSet<>();
 }

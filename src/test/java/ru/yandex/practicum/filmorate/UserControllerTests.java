@@ -11,21 +11,19 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.filmorate.controller.UserController;
-import ru.yandex.practicum.filmorate.dto.NewUserDto;
-import ru.yandex.practicum.filmorate.dto.UpdateUserDto;
+import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exception.ErrorHandler;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
-import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.hamcrest.Matchers.containsString;
 
 @WebMvcTest(UserController.class)
 @Import({UserMapper.class, ErrorHandler.class})
@@ -40,11 +38,11 @@ public class UserControllerTests {
     @MockBean
     private UserService userService;
 
-    private User user;
+    private UserDto validUserDto;
 
     @BeforeEach
     void setUp() {
-        user = User.builder()
+        validUserDto = UserDto.builder()
                 .id(1)
                 .email("user@mail.ru")
                 .login("userLogin")
@@ -55,10 +53,11 @@ public class UserControllerTests {
 
     @Test
     void testFindAllUsers() throws Exception {
-        Mockito.when(userService.findAll()).thenReturn(List.of(user));
+        Mockito.when(userService.findAll()).thenReturn(List.of(validUserDto));
 
         mockMvc.perform(get("/users"))
                 .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].email").value("user@mail.ru"))
                 .andExpect(jsonPath("$[0].login").value("userLogin"));
@@ -66,34 +65,37 @@ public class UserControllerTests {
 
     @Test
     void testFindUserById() throws Exception {
-        Mockito.when(userService.findById(1)).thenReturn(user);
+        Mockito.when(userService.findById(1)).thenReturn(validUserDto);
 
         mockMvc.perform(get("/users/1"))
                 .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("User Name"));
     }
 
     @Test
     void testCreateUserSuccess() throws Exception {
-        NewUserDto newUserDto = NewUserDto.builder()
+        UserDto newUserDto = UserDto.builder()
                 .email("new@mail.ru")
                 .login("newLogin")
                 .name("New User")
                 .birthday(LocalDate.of(1995, 5, 5))
                 .build();
 
-        Mockito.when(userService.create(any(User.class))).thenReturn(user);
+        Mockito.when(userService.create(any(UserDto.class))).thenReturn(validUserDto);
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(newUserDto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
     void testCreateUserValidationFailEmail() throws Exception {
-        NewUserDto invalidUserDto = NewUserDto.builder()
+        UserDto invalidUserDto = UserDto.builder()
                 .email("invalid-email-no-at")
                 .login("login")
                 .birthday(LocalDate.of(1995, 5, 5))
@@ -108,7 +110,7 @@ public class UserControllerTests {
 
     @Test
     void testCreateUserValidationFailLoginWithSpaces() throws Exception {
-        NewUserDto invalidUserDto = NewUserDto.builder()
+        UserDto invalidUserDto = UserDto.builder()
                 .email("user@mail.ru")
                 .login("invalid login spaces")
                 .birthday(LocalDate.of(1995, 5, 5))
@@ -118,33 +120,34 @@ public class UserControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidUserDto)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.description", containsString("login")));
+                .andExpect(jsonPath("$.description", containsString("Логин не может содержать пробелы")));
     }
 
     @Test
     void testUpdateUserSuccess() throws Exception {
-        UpdateUserDto updateUserDto = UpdateUserDto.builder()
+        UserDto updateUserDto = UserDto.builder()
                 .id(1)
                 .email("updated@mail.ru")
                 .login("updatedLogin")
                 .birthday(LocalDate.of(2000, 1, 1))
                 .build();
 
-        Mockito.when(userService.update(any(User.class))).thenReturn(user);
+        Mockito.when(userService.update(any(UserDto.class))).thenReturn(validUserDto);
 
         mockMvc.perform(put("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateUserDto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
     @Test
-    void testUpdateUserValidationFailNoId() throws Exception {
-        UpdateUserDto invalidUpdateDto = UpdateUserDto.builder()
-                .id(null)
+    void testUpdateUserValidationFailFutureBirthday() throws Exception {
+        UserDto invalidUpdateDto = UserDto.builder()
+                .id(1)
                 .email("updated@mail.ru")
                 .login("updatedLogin")
-                .birthday(LocalDate.of(2000, 1, 1))
+                .birthday(LocalDate.now().plusDays(1))
                 .build();
 
         mockMvc.perform(put("/users")
@@ -155,6 +158,8 @@ public class UserControllerTests {
 
     @Test
     void testAddFriendOneWay() throws Exception {
+        Mockito.doNothing().when(userService).addFriend(1, 2);
+
         mockMvc.perform(put("/users/1/friends/2"))
                 .andExpect(status().isOk());
 
@@ -163,6 +168,8 @@ public class UserControllerTests {
 
     @Test
     void testRemoveFriend() throws Exception {
+        Mockito.doNothing().when(userService).removeFriend(1, 2);
+
         mockMvc.perform(delete("/users/1/friends/2"))
                 .andExpect(status().isOk());
 
@@ -171,10 +178,22 @@ public class UserControllerTests {
 
     @Test
     void testGetFriends() throws Exception {
-        Mockito.when(userService.getFriends(1)).thenReturn(Collections.singletonList(user));
+        Mockito.when(userService.getFriends(1)).thenReturn(Collections.singletonList(validUserDto));
 
         mockMvc.perform(get("/users/1/friends"))
                 .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$[0].id").value(1));
+    }
+
+    @Test
+    void testGetCommonFriends() throws Exception {
+        Mockito.when(userService.getCommonFriends(1, 2)).thenReturn(List.of(validUserDto));
+
+        mockMvc.perform(get("/users/1/friends/common/2"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].id").value(1));
     }
