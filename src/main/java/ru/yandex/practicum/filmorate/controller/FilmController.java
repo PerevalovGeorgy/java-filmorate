@@ -1,63 +1,64 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.dto.NewFilmDto;
+import ru.yandex.practicum.filmorate.dto.UpdateFilmDto;
 import ru.yandex.practicum.filmorate.service.FilmService;
+
 import java.util.Collection;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/films")
 @Slf4j
+@RequiredArgsConstructor
 public class FilmController {
     private final FilmService filmService;
 
-    public FilmController(FilmService filmService) {
-        this.filmService = filmService;
-    }
-
     @GetMapping
-    public Collection<Film> findAll() {
-        log.debug("Запрос на получение всех фильмов");
+    public Collection<FilmDto> findAll() {
+        log.debug("GET-запрос на получение всех фильмов");
         return filmService.findAll();
     }
 
     @GetMapping("/{id}")
-    public Film findById(@PathVariable Integer id) {
-        log.debug("Запрос на получение фильма с id={}", id);
+    public FilmDto findById(@PathVariable Integer id) {
+        log.debug("GET-запрос на получение фильма с id={}", id);
         return filmService.findById(id);
     }
 
     @PostMapping
-    public Film create(@RequestBody Film film) {
-        log.debug("Создание фильма: {}", film);
-        return filmService.create(film);
+    @ResponseStatus(HttpStatus.CREATED)
+    public FilmDto create(@Valid @RequestBody NewFilmDto newFilmDto) {
+        log.debug("POST-запрос на создание фильма: {}", newFilmDto.getName());
+        return filmService.create(newFilmDto);
     }
 
     @PutMapping
-    public Film update(@RequestBody Film newFilm) {
-        log.debug("Обновление фильма: {}", newFilm);
-        return filmService.update(newFilm);
+    public FilmDto update(@Valid @RequestBody UpdateFilmDto updateFilmDto) {
+        log.debug("PUT-запрос на обновление фильма с id={}", updateFilmDto.getId());
+        return filmService.update(updateFilmDto);
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public Set<Integer> setLike(@PathVariable("id") Integer filmId,
-                                @PathVariable("userId") Integer userId) {
-        log.debug("Пользователь {} ставит лайк фильму {}", userId, filmId);
-        return filmService.setLikeFilm(filmId, userId);
+    public void setLike(@PathVariable("id") Integer filmId, @PathVariable("userId") Integer userId) {
+        log.debug("PUT-запрос: Пользователь {} ставит лайк фильму {}", userId, filmId);
+        filmService.setLikeFilm(filmId, userId);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
-    public Set<Integer> deleteLike(@PathVariable("id") Integer filmId,
-                                   @PathVariable("userId") Integer userId) {
-        log.debug("Пользователь {} удаляет лайк у фильма {}", userId, filmId);
-        return filmService.deleteLikeFilm(filmId, userId);
+    public void deleteLike(@PathVariable("id") Integer filmId, @PathVariable("userId") Integer userId) {
+        log.debug("DELETE-запрос: Пользователь {} удаляет лайк у фильма {}", userId, filmId);
+        filmService.deleteLikeFilm(filmId, userId);
     }
 
     @GetMapping("/popular")
-    public Collection<Film> getPopularFilms(@RequestParam(required = false) Integer count) {
-        log.debug("Запрос на получение популярных фильмов, count={}", count);
+    public Collection<FilmDto> getPopularFilms(@RequestParam(defaultValue = "10") Integer count) {
+        log.debug("GET-запрос на получение популярных фильмов, count={}", count);
         return filmService.getFilmsByLikes(count);
     }
 }

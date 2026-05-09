@@ -1,149 +1,106 @@
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
-import java.time.LocalDate;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.Collection;
 import java.util.stream.Collectors;
 
-@Service
 @Slf4j
+@Service
 public class UserService {
     private final UserStorage userStorage;
-    private static final Pattern EMAIL_PATTERN =
-            Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private final UserMapper userMapper;
 
-    public UserService(UserStorage userStorage) {
+
+    public UserService(@Qualifier("userDbStorage") UserStorage userStorage, UserMapper userMapper) {
         this.userStorage = userStorage;
+        this.userMapper = userMapper;
     }
 
-    public Collection<User> findAll() {
-        return userStorage.findAll();
+    public Collection<UserDto> findAll() {
+        log.info("Запрос на получение списка всех пользователей");
+        return userStorage.findAll().stream()
+                .map(userMapper::toDto)
+                .collect(Collectors.toList());
     }
 
-    public User findById(Integer id) {
+    public UserDto findById(Integer id) {
+        log.info("Запрос на получение пользователя с id={}", id);
         return userStorage.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("Пользователь с id=" + id + " не найден"));
+                .map(userMapper::toDto)
+                .orElseThrow(() -> {
+                    log.warn("Пользователь с id={} не найден", id);
+                    return new NotFoundException("Пользователь с id " + id + " не найден");
+                });
     }
 
-    public User create(User user) {
-        validateUser(user);
-
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-            log.debug("Имя пользователя установлено как логин: {}", user.getLogin());
-        }
-
-        return userStorage.create(user);
+    public UserDto create(UserDto userDto) {
+        log.info("Запрос на создание пользователя с логином {}", userDto.getLogin());
+        User user = userMapper.toModel(userDto);
+        User createdUser = userStorage.create(user);
+        return userMapper.toDto(createdUser);
     }
 
-    public User update(User newUser) {
-        if (newUser.getId() == null) {
-            log.warn("Id пользователя не указан при обновлении");
-            throw new ValidationException("Id должен быть указан");
+    public UserDto update(UserDto userDto) {
+        log.info("Запрос на обновление пользователя с id={}", userDto.getId());
+        if (userDto.getId() == null || !userStorage.existsById(userDto.getId())) {
+            log.warn("Попытка обновления несуществующего пользователя с id={}", userDto.getId());
+            throw new NotFoundException("Пользователь с id " + userDto.getId() + " не найден");
         }
-
-        if (!userStorage.existsById(newUser.getId())) {
-            log.warn("Пользователь с id = {} не найден при обновлении", newUser.getId());
-            throw new UserNotFoundException("Пользователь с id = " + newUser.getId() + " не найден");
-        }
-
-        validateUser(newUser);
-
-        if (newUser.getName() == null || newUser.getName().isBlank()) {
-            newUser.setName(newUser.getLogin());
-            log.debug("Имя пользователя установлено как логин: {}", newUser.getLogin());
-        }
-
-        return userStorage.update(newUser);
+        User user = userMapper.toModel(userDto);
+        User updatedUser = userStorage.update(user);
+        return userMapper.toDto(updatedUser);
     }
 
     public void addFriend(Integer userId, Integer friendId) {
-        User user = findById(userId);
-        User friend = findById(friendId);
-
-        if (user.getId().equals(friend.getId())) {
-            throw new ValidationException("Нельзя добавить самого себя в друзья");
-        }
-
-        user.addFriend(friendId);
-        friend.addFriend(userId);
-
-        log.info("Пользователь {} и {} стали друзьями", userId, friendId);
+        log.info("Запрос: добавление в друзья. К кому: id={}, кто: id={}", userId, friendId);
+        checkUserExists(userId);
+        checkUserExists(friendId);
+        userStorage.addFriend(userId, friendId);
     }
 
     public void removeFriend(Integer userId, Integer friendId) {
-        User user = findById(userId);
-        User friend = findById(friendId);
-
-        user.removeFriend(friendId);
-        friend.removeFriend(userId);
-
-        log.info("Пользователь {} удален из друзей пользователя {}", friendId, userId);
+        log.info("Запрос: удаление из друзей. У кого: id={}, кого: id={}", userId, friendId);
+        checkUserExists(userId);
+        checkUserExists(friendId);
+        userStorage.removeFriend(userId, friendId);
     }
 
-    public Collection<User> getFriends(Integer userId) {
-        User user = findById(userId);
+    public void confirmFriendship(Integer userId, Integer friendId) {
+        log.info("Запрос: подтверждение дружбы. От кого: id={}, кому: id={}", userId, friendId);
+        checkUserExists(userId);
+        checkUserExists(friendId);
+        userStorage.confirmFriendship(userId, friendId);
+    }
 
-        return user.getFriends().stream()
-                .map(this::findById)
+    public Collection<UserDto> getFriends(Integer userId) {
+        log.info("Запрос на получение списка друзей пользователя с id={}", userId);
+        checkUserExists(userId);
+        return userStorage.getFriends(userId).stream()
+                .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
 
-    public Collection<User> getCommonFriends(Integer userId, Integer otherId) {
-        User user = findById(userId);
-        User other = findById(otherId);
-
-        Set<Integer> commonFriendsIds = new HashSet<>(user.getFriends());
-        commonFriendsIds.retainAll(other.getFriends());
-
-        return commonFriendsIds.stream()
-                .map(this::findById)
+    public Collection<UserDto> getCommonFriends(Integer userId, Integer otherId) {
+        log.info("Запрос на получение общих друзей для id={} и id={}", userId, otherId);
+        checkUserExists(userId);
+        checkUserExists(otherId);
+        return userStorage.getCommonFriends(userId, otherId).stream()
+                .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
 
-    public boolean existsById(Integer id) {
-        return userStorage.existsById(id);
-    }
-
-    private void validateUser(User user) {
-        if (user.getEmail() == null || user.getEmail().isBlank()) {
-            log.warn("Валидация не пройдена: email пустой");
-            throw new ValidationException("Email не может быть пустым");
+    private void checkUserExists(Integer id) {
+        if (!userStorage.existsById(id)) {
+            log.warn("Пользователь с id={} не существует", id);
+            throw new NotFoundException("Пользователь с id " + id + " не найден");
         }
-
-        if (!user.getEmail().contains("@")) {
-            log.warn("Валидация не пройдена: email не содержит @ - {}", user.getEmail());
-            throw new ValidationException("Email должен содержать @");
-        }
-
-        if (!EMAIL_PATTERN.matcher(user.getEmail()).matches()) {
-            log.warn("Валидация не пройдена: некорректный email - {}", user.getEmail());
-            throw new ValidationException("Email должен быть корректным (например: user@example.com)");
-        }
-        log.debug("Email пользователя валиден: {}", user.getEmail());
-
-        if (user.getLogin() == null || user.getLogin().isBlank()) {
-            log.warn("Валидация не пройдена: логин пустой");
-            throw new ValidationException("Логин не может быть пустым");
-        }
-
-        if (user.getLogin().contains(" ")) {
-            log.warn("Валидация не пройдена: логин содержит пробелы - {}", user.getLogin());
-            throw new ValidationException("Логин не может содержать пробелы");
-        }
-        log.debug("Логин пользователя валиден: {}", user.getLogin());
-
-        if (user.getBirthday() != null && user.getBirthday().isAfter(LocalDate.now())) {
-            log.warn("Валидация не пройдена: дата рождения в будущем - {}", user.getBirthday());
-            throw new ValidationException("Дата рождения не может быть в будущем");
-        }
-        log.debug("Дата рождения пользователя валидна: {}", user.getBirthday());
     }
 }
