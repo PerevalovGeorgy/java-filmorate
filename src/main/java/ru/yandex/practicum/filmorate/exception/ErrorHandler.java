@@ -43,7 +43,7 @@ public class ErrorHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
         String message = e.getMessage();
-        if (message != null && (message.contains("MpaRating") || message.contains("Genre"))) {
+        if (message != null && (message.contains("MpaRating") || message.contains("Genre") || message.contains("Director"))) {
             log.error("Ресурс справочника не найден при десериализации: {}", message);
             String description = e.getCause() != null ? e.getCause().getMessage() : message;
             return ResponseEntity

@@ -29,4 +29,7 @@ public class UpdateFilmDto {
 
     @Builder.Default
     private LinkedHashSet<GenreDto> genres = new LinkedHashSet<>();
+
+    @Builder.Default
+    private LinkedHashSet<DirectorDto> directors = new LinkedHashSet<>();
 }

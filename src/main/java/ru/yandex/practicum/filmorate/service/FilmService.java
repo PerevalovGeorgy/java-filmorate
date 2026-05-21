@@ -1,8 +1,10 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.FilmRepository;
+import ru.yandex.practicum.filmorate.dal.DirectorRepository;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.NewFilmDto;
 import ru.yandex.practicum.filmorate.dto.UpdateFilmDto;
@@ -11,7 +13,6 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.GenreStorage;
 import ru.yandex.practicum.filmorate.storage.MpaRatingStorage;
 
@@ -21,8 +22,10 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class FilmService {
-    private final FilmStorage filmStorage;
+    private final FilmRepository filmRepository;
+    private final DirectorRepository directorRepository;
     private final UserService userService;
     private final FilmMapper filmMapper;
     private final MpaRatingStorage mpaRatingStorage;
@@ -30,28 +33,16 @@ public class FilmService {
 
     private static final LocalDate MINDATE = LocalDate.of(1895, 12, 28);
 
-    public FilmService(@Qualifier("filmRepository") FilmStorage filmStorage,
-                       UserService userService,
-                       FilmMapper filmMapper,
-                       MpaRatingStorage mpaRatingStorage,
-                       GenreStorage genreStorage) {
-        this.filmStorage = filmStorage;
-        this.userService = userService;
-        this.filmMapper = filmMapper;
-        this.mpaRatingStorage = mpaRatingStorage;
-        this.genreStorage = genreStorage;
-    }
-
     public Collection<FilmDto> findAll() {
         log.info("Запрос на получение всех фильмов");
-        return filmStorage.findAll().stream()
+        return filmRepository.findAll().stream()
                 .map(filmMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     public FilmDto findById(Integer id) {
         log.info("Запрос на получение фильма с id={}", id);
-        return filmStorage.findById(id)
+        return filmRepository.findById(id)
                 .map(filmMapper::toDto)
                 .orElseThrow(() -> new MoviePresenceInListException("Фильм с id=" + id + " не найден"));
     }
@@ -73,8 +64,16 @@ public class FilmService {
             });
         }
 
+        if (dto.getDirectors() != null) {
+            dto.getDirectors().forEach(directorDto -> {
+                if (!directorRepository.existsById(directorDto.getId())) {
+                    throw new NotFoundException("Режиссер с id " + directorDto.getId() + " не найден");
+                }
+            });
+        }
+
         Film film = filmMapper.toModel(dto);
-        Film createdFilm = filmStorage.create(film);
+        Film createdFilm = filmRepository.create(film);
         return filmMapper.toDto(createdFilm);
     }
 
@@ -84,7 +83,7 @@ public class FilmService {
             log.warn("Id фильма не указан при обновлении");
             throw new ValidationException("Id должен быть указан");
         }
-        if (!filmStorage.existsById(dto.getId())) {
+        if (!filmRepository.existsById(dto.getId())) {
             log.warn("Фильм с id = {} не найден при обновлении", dto.getId());
             throw new MoviePresenceInListException("Фильм с id = " + dto.getId() + " не найден");
         }
@@ -103,32 +102,50 @@ public class FilmService {
             });
         }
 
+        if (dto.getDirectors() != null) {
+            dto.getDirectors().forEach(directorDto -> {
+                if (!directorRepository.existsById(directorDto.getId())) {
+                    throw new NotFoundException("Режиссер с id " + directorDto.getId() + " не найден");
+                }
+            });
+        }
+
         Film film = filmMapper.toModel(dto);
-        Film updatedFilm = filmStorage.update(film);
+        Film updatedFilm = filmRepository.update(film);
         return filmMapper.toDto(updatedFilm);
     }
 
     public void setLikeFilm(Integer filmId, Integer userId) {
         log.info("Запрос: лайк фильму id={} от пользователя id={}", filmId, userId);
-        if (!filmStorage.existsById(filmId)) {
+        if (!filmRepository.existsById(filmId)) {
             throw new MoviePresenceInListException("Такого фильма нет в списке фильмов");
         }
         userService.findById(userId);
-        filmStorage.addLike(filmId, userId);
+        filmRepository.addLike(filmId, userId);
     }
 
     public void deleteLikeFilm(Integer filmId, Integer userId) {
         log.info("Запрос: удаление лайка у фильма id={} пользователем id={}", filmId, userId);
-        if (!filmStorage.existsById(filmId)) {
+        if (!filmRepository.existsById(filmId)) {
             throw new MoviePresenceInListException("Такого фильма нет в списке фильмов");
         }
         userService.findById(userId);
-        filmStorage.removeLike(filmId, userId);
+        filmRepository.removeLike(filmId, userId);
     }
 
     public Collection<FilmDto> getFilmsByLikes(Integer count) {
         log.info("Запрос на получение популярных фильмов, лимит: {}", count);
-        return filmStorage.getPopularFilms(count).stream()
+        return filmRepository.getPopularFilms(count).stream()
+                .map(filmMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public Collection<FilmDto> getFilmsByDirectorId(Integer directorId, String sortBy) {
+        log.info("Запрос на получение фильмов режиссера с id={} с сортировкой по: {}", directorId, sortBy);
+        if (!directorRepository.existsById(directorId)) {
+            throw new NotFoundException("Режиссер с id " + directorId + " не найден");
+        }
+        return filmRepository.getFilmsByDirectorId(directorId, sortBy).stream()
                 .map(filmMapper::toDto)
                 .collect(Collectors.toList());
     }
