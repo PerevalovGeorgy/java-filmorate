@@ -56,6 +56,7 @@ public class ErrorHandler {
                 .body(new ErrorResponse("Ошибка валидации параметров запроса", message));
     }
 
+
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException e) {
         log.error("Пользователь не найден: {}", e.getMessage());

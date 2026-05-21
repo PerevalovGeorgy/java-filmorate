@@ -2,10 +2,7 @@ package ru.yandex.practicum.filmorate.mapper;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.dto.FilmDto;
-import ru.yandex.practicum.filmorate.dto.GenreDto;
-import ru.yandex.practicum.filmorate.dto.NewFilmDto;
-import ru.yandex.practicum.filmorate.dto.UpdateFilmDto;
+import ru.yandex.practicum.filmorate.dto.*;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.LinkedHashSet;
@@ -16,6 +13,7 @@ import java.util.stream.Collectors;
 public class FilmMapper {
     private final MpaRatingMapper mpaRatingMapper;
     private final GenreMapper genreMapper;
+    private final DirectorMapper directorMapper;
 
     public FilmDto toDto(Film film) {
         if (film == null) {
@@ -28,6 +26,12 @@ public class FilmMapper {
                 .map(genreMapper::toDto)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
+        LinkedHashSet<DirectorDto> directorDtos = film.getDirector() == null
+                ? new LinkedHashSet<>()
+                : film.getDirector().stream()
+                .map(directorMapper::toDto)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
         return FilmDto.builder()
                 .id(film.getId())
                 .name(film.getName())
@@ -36,6 +40,7 @@ public class FilmMapper {
                 .duration(film.getDuration())
                 .mpa(mpaRatingMapper.toDto(film.getMpa()))
                 .genres(genreDtos)
+                .director(directorDtos)
                 .build();
     }
 
@@ -48,6 +53,12 @@ public class FilmMapper {
                 .map(genreMapper::toModel)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
+        var director = dto.getDirector() == null
+                ? new LinkedHashSet<ru.yandex.practicum.filmorate.model.Director>()
+                : dto.getDirector().stream()
+                .map(directorMapper::toModel)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
         return Film.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
@@ -55,6 +66,7 @@ public class FilmMapper {
                 .duration(dto.getDuration())
                 .mpa(mpaRatingMapper.toModel(dto.getMpa()))
                 .genres(genres)
+                .director(director)
                 .build();
     }
 
@@ -67,6 +79,12 @@ public class FilmMapper {
                 .map(genreMapper::toModel)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
+        var director = dto.getDirector() == null
+                ? new LinkedHashSet<ru.yandex.practicum.filmorate.model.Director>()
+                : dto.getDirector().stream()
+                .map(directorMapper::toModel)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
         return Film.builder()
                 .id(dto.getId())
                 .name(dto.getName())
@@ -75,6 +93,7 @@ public class FilmMapper {
                 .duration(dto.getDuration())
                 .mpa(mpaRatingMapper.toModel(dto.getMpa()))
                 .genres(genres)
+                .director(director)
                 .build();
     }
 }
