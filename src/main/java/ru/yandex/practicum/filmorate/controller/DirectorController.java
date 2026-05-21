@@ -20,7 +20,7 @@ public class DirectorController {
 
     @GetMapping
     public Collection<DirectorDto> findAll() {
-        log.info("\"GET-запрос на получение всех режиссеров");
+        log.info("GET-запрос на получение всех режиссеров");
         return directorService.findAll();
     }
 
