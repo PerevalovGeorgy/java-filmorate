@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import java.time.LocalDate;
