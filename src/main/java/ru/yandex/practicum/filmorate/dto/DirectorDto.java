@@ -1,6 +1,6 @@
 package ru.yandex.practicum.filmorate.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 public class DirectorDto {
     private Integer id;
 
-    @NotBlank(message = "Имя режиссера не может быть пустым")
+    @NotNull(message = "Имя режиссера не может быть пустым")
     private String name;
 }
