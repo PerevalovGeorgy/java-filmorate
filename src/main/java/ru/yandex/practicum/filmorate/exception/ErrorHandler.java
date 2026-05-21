@@ -43,7 +43,7 @@ public class ErrorHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
         String message = e.getMessage();
-        if (message != null && (message.contains("MpaRating") || message.contains("Genre") || message.contains("Director"))) {
+        if (message != null && (message.contains("MpaRating") || message.contains("Genre"))) {
             log.error("Ресурс справочника не найден при десериализации: {}", message);
             String description = e.getCause() != null ? e.getCause().getMessage() : message;
             return ResponseEntity
@@ -55,6 +55,7 @@ public class ErrorHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse("Ошибка валидации параметров запроса", message));
     }
+
 
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException e) {

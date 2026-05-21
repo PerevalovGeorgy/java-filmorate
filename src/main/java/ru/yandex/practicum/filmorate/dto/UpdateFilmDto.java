@@ -31,7 +31,6 @@ public class UpdateFilmDto {
     @Builder.Default
     private LinkedHashSet<GenreDto> genres = new LinkedHashSet<>();
 
-    @JsonProperty("director")
     @Builder.Default
-    private LinkedHashSet<DirectorDto> directors = new LinkedHashSet<>();
+    private LinkedHashSet<DirectorDto> director = new LinkedHashSet<>();
 }

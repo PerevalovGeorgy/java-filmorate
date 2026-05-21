@@ -28,7 +28,7 @@ public class FilmRowMapper implements RowMapper<Film> {
                 .duration(rs.getLong("duration"))
                 .mpa(mpa.getId() == 0 ? null : mpa)
                 .genres(new LinkedHashSet<>())
-                .directors(new LinkedHashSet<>())
+                .director(new LinkedHashSet<>())
                 .build();
     }
 }

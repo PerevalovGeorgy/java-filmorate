@@ -64,8 +64,8 @@ public class FilmService {
             });
         }
 
-        if (dto.getDirectors() != null) {
-            dto.getDirectors().forEach(directorDto -> {
+        if (dto.getDirector() != null) {
+            dto.getDirector().forEach(directorDto -> {
                 if (!directorRepository.existsById(directorDto.getId())) {
                     throw new NotFoundException("Режиссер с id " + directorDto.getId() + " не найден");
                 }
@@ -102,8 +102,8 @@ public class FilmService {
             });
         }
 
-        if (dto.getDirectors() != null) {
-            dto.getDirectors().forEach(directorDto -> {
+        if (dto.getDirector() != null) {
+            dto.getDirector().forEach(directorDto -> {
                 if (!directorRepository.existsById(directorDto.getId())) {
                     throw new NotFoundException("Режиссер с id " + directorDto.getId() + " не найден");
                 }

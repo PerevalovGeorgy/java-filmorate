@@ -28,7 +28,7 @@ public class FilmRepository extends BaseRepository<Film> {
                 "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id";
         Collection<Film> films = findMany(sql);
         loadGenresForFilms(films);
-        loadDirectorsForFilms(films);
+        loadDirectorForFilms(films);
         return films;
     }
 
@@ -41,7 +41,7 @@ public class FilmRepository extends BaseRepository<Film> {
         Optional<Film> filmOpt = findOne(sql, id);
         filmOpt.ifPresent(film -> {
             film.setGenres(getGenresByFilmId(id));
-            film.setDirectors(getDirectorsByFilmId(id));
+            film.setDirector(getDirectorByFilmId(id));
         });
         return filmOpt;
     }
@@ -53,7 +53,7 @@ public class FilmRepository extends BaseRepository<Film> {
         int id = insert(sql, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), mpaId);
         film.setId(id);
         saveGenres(film);
-        saveDirectors(film);
+        saveDirector(film);
         return film;
     }
 
@@ -67,7 +67,7 @@ public class FilmRepository extends BaseRepository<Film> {
         jdbc.update("DELETE FROM film_directors WHERE film_id = ?", film.getId());
 
         saveGenres(film);
-        saveDirectors(film);
+        saveDirector(film);
         return film;
     }
 
@@ -94,7 +94,7 @@ public class FilmRepository extends BaseRepository<Film> {
                 "ORDER BY likes_count DESC LIMIT ?";
         Collection<Film> popular = findMany(sql, count);
         loadGenresForFilms(popular);
-        loadDirectorsForFilms(popular);
+        loadDirectorForFilms(popular);
         return popular;
     }
 
@@ -124,7 +124,7 @@ public class FilmRepository extends BaseRepository<Film> {
 
         Collection<Film> films = findMany(sql, directorId);
         loadGenresForFilms(films);
-        loadDirectorsForFilms(films);
+        loadDirectorForFilms(films);
         return films;
     }
 
@@ -146,10 +146,10 @@ public class FilmRepository extends BaseRepository<Film> {
         });
     }
 
-    private void saveDirectors(Film film) {
-        if (film.getDirectors() == null || film.getDirectors().isEmpty()) return;
+    private void saveDirector(Film film) {
+        if (film.getDirector() == null || film.getDirector().isEmpty()) return;
         String sql = "INSERT INTO film_directors (film_id, director_id) VALUES (?, ?)";
-        List<Director> directorList = new ArrayList<>(film.getDirectors());
+        List<Director> directorList = new ArrayList<>(film.getDirector());
         jdbc.batchUpdate(sql, new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -182,20 +182,20 @@ public class FilmRepository extends BaseRepository<Film> {
         }, filmId);
     }
 
-    private LinkedHashSet<Director> getDirectorsByFilmId(Integer filmId) {
+    private LinkedHashSet<Director> getDirectorByFilmId(Integer filmId) {
         String sql = "SELECT fd.director_id, d.name AS director_name " +
                 "FROM film_directors fd " +
                 "JOIN directors d ON fd.director_id = d.id " +
                 "WHERE fd.film_id = ?";
         return jdbc.query(sql, (rs) -> {
-            LinkedHashSet<Director> directors = new LinkedHashSet<>();
+            LinkedHashSet<Director> director = new LinkedHashSet<>();
             while (rs.next()) {
-                directors.add(Director.builder()
+                director.add(Director.builder()
                         .id(rs.getInt("director_id"))
                         .name(rs.getString("director_name"))
                         .build());
             }
-            return directors;
+            return director;
         }, filmId);
     }
 
@@ -217,7 +217,7 @@ public class FilmRepository extends BaseRepository<Film> {
         films.forEach(f -> f.setGenres(map.getOrDefault(f.getId(), new LinkedHashSet<>())));
     }
 
-    private void loadDirectorsForFilms(Collection<Film> films) {
+    private void loadDirectorForFilms(Collection<Film> films) {
         if (films.isEmpty()) return;
         String sql = "SELECT fd.film_id, fd.director_id, d.name AS director_name " +
                 "FROM film_directors fd " +
@@ -231,6 +231,6 @@ public class FilmRepository extends BaseRepository<Film> {
                     .build();
             map.computeIfAbsent(fId, k -> new LinkedHashSet<>()).add(director);
         });
-        films.forEach(f -> f.setDirectors(map.getOrDefault(f.getId(), new LinkedHashSet<>())));
+        films.forEach(f -> f.setDirector(map.getOrDefault(f.getId(), new LinkedHashSet<>())));
     }
 }

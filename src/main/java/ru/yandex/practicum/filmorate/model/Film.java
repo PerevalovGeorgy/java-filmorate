@@ -21,5 +21,5 @@ public class Film {
     private LinkedHashSet<Genre> genres = new LinkedHashSet<>();
 
     @Builder.Default
-    private LinkedHashSet<Director> directors = new LinkedHashSet<>();
+    private LinkedHashSet<Director> director = new LinkedHashSet<>();
 }

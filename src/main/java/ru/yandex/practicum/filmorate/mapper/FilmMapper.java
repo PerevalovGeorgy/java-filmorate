@@ -26,9 +26,9 @@ public class FilmMapper {
                 .map(genreMapper::toDto)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        LinkedHashSet<DirectorDto> directorDtos = film.getDirectors() == null
+        LinkedHashSet<DirectorDto> directorDtos = film.getDirector() == null
                 ? new LinkedHashSet<>()
-                : film.getDirectors().stream()
+                : film.getDirector().stream()
                 .map(directorMapper::toDto)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
@@ -40,7 +40,7 @@ public class FilmMapper {
                 .duration(film.getDuration())
                 .mpa(mpaRatingMapper.toDto(film.getMpa()))
                 .genres(genreDtos)
-                .directors(directorDtos)
+                .director(directorDtos)
                 .build();
     }
 
@@ -53,9 +53,9 @@ public class FilmMapper {
                 .map(genreMapper::toModel)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        var directors = dto.getDirectors() == null
+        var director = dto.getDirector() == null
                 ? new LinkedHashSet<ru.yandex.practicum.filmorate.model.Director>()
-                : dto.getDirectors().stream()
+                : dto.getDirector().stream()
                 .map(directorMapper::toModel)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
@@ -66,7 +66,7 @@ public class FilmMapper {
                 .duration(dto.getDuration())
                 .mpa(mpaRatingMapper.toModel(dto.getMpa()))
                 .genres(genres)
-                .directors(directors)
+                .director(director)
                 .build();
     }
 
@@ -79,9 +79,9 @@ public class FilmMapper {
                 .map(genreMapper::toModel)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        var directors = dto.getDirectors() == null
+        var director = dto.getDirector() == null
                 ? new LinkedHashSet<ru.yandex.practicum.filmorate.model.Director>()
-                : dto.getDirectors().stream()
+                : dto.getDirector().stream()
                 .map(directorMapper::toModel)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
@@ -93,7 +93,7 @@ public class FilmMapper {
                 .duration(dto.getDuration())
                 .mpa(mpaRatingMapper.toModel(dto.getMpa()))
                 .genres(genres)
-                .directors(directors)
+                .director(director)
                 .build();
     }
 }
