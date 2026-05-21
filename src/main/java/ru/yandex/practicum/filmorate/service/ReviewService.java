@@ -23,7 +23,7 @@ public class ReviewService {
     private final UserStorage userStorage;
 
     public ReviewService(@Qualifier("reviewDbStorage") ReviewStorage reviewStorage,
-                         @Qualifier("filmDbStorage") FilmStorage filmStorage,
+                         @Qualifier("filmRepository") FilmStorage filmStorage,
                          @Qualifier("userDbStorage") UserStorage userStorage) {
 
         this.reviewStorage = reviewStorage;

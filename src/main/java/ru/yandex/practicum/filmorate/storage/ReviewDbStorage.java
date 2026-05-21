@@ -93,11 +93,22 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public void addLikeReview(Integer reviewId, Integer userId) {
-        String sqlInsert = "INSERT INTO review_likes (review_id, user_id, is_like) VALUES (?, ?, TRUE)";
-        String sqlUpdate = "UPDATE reviews SET useful = useful + 1 WHERE id = ?";
+        Optional<Boolean> likeStatus = getLikeStatus(reviewId, userId);
 
-        jdbcTemplate.update(sqlInsert, reviewId, userId);
-        jdbcTemplate.update(sqlUpdate, reviewId);
+        if (likeStatus.isEmpty()) {
+            // Оценки не было: делаем обычный INSERT и прибавляем к рейтингу 1
+            String sqlInsert = "INSERT INTO review_likes (review_id, user_id, is_like) VALUES (?, ?, TRUE)";
+            String sqlUpdateUseful = "UPDATE reviews SET useful = useful + 1 WHERE id = ?";
+            jdbcTemplate.update(sqlInsert, reviewId, userId);
+            jdbcTemplate.update(sqlUpdateUseful, reviewId);
+
+        } else if (!likeStatus.get()) {
+            // Был дизлайк: меняем его на лайк и прибавляем к рейтингу 2
+            String sqlUpdateLike = "UPDATE review_likes SET is_like = TRUE WHERE review_id = ? AND user_id = ?";
+            String sqlUpdateUseful = "UPDATE reviews SET useful = useful + 2 WHERE id = ?";
+            jdbcTemplate.update(sqlUpdateLike, reviewId, userId);
+            jdbcTemplate.update(sqlUpdateUseful, reviewId);
+        }
     }
 
     @Override
@@ -113,11 +124,22 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public void addDislikeReview(Integer reviewId, Integer userId) {
-        String sqlInsert = "INSERT INTO review_likes (review_id, user_id, is_like) VALUES (?, ?, FALSE)";
-        String sqlUpdate = "UPDATE reviews SET useful = useful - 1 WHERE id = ?";
+        Optional<Boolean> likeStatus = getLikeStatus(reviewId, userId);
 
-        jdbcTemplate.update(sqlInsert, reviewId, userId);
-        jdbcTemplate.update(sqlUpdate, reviewId);
+        if (likeStatus.isEmpty()) {
+            // Оценки не было: делаем обычный INSERT и вычитаем из рейтинга 1
+            String sqlInsert = "INSERT INTO review_likes (review_id, user_id, is_like) VALUES (?, ?, FALSE)";
+            String sqlUpdateUseful = "UPDATE reviews SET useful = useful - 1 WHERE id = ?";
+            jdbcTemplate.update(sqlInsert, reviewId, userId);
+            jdbcTemplate.update(sqlUpdateUseful, reviewId);
+
+        } else if (likeStatus.get()) {
+            // Был лайк: меняем его на дизлайк и вычитаем из рейтинга 2
+            String sqlUpdateLike = "UPDATE review_likes SET is_like = FALSE WHERE review_id = ? AND user_id = ?";
+            String sqlUpdateUseful = "UPDATE reviews SET useful = useful - 2 WHERE id = ?";
+            jdbcTemplate.update(sqlUpdateLike, reviewId, userId);
+            jdbcTemplate.update(sqlUpdateUseful, reviewId);
+        }
     }
 
     @Override
@@ -130,4 +152,16 @@ public class ReviewDbStorage implements ReviewStorage {
             jdbcTemplate.update(sqlUpdate, reviewId);
         }
     }
+
+    private Optional<Boolean> getLikeStatus(Integer reviewId, Integer userId) {
+        String sql = "SELECT is_like FROM review_likes WHERE review_id = ? AND user_id = ?";
+        try {
+            Boolean isLike = jdbcTemplate.queryForObject(sql, Boolean.class, reviewId, userId);
+            return Optional.ofNullable(isLike);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
+    }
+
+
 }
