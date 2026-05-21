@@ -42,7 +42,7 @@ public class UserRepository extends BaseRepository<User> {
     }
 
     public void deleteById(Integer id) {
-        delete("DELETE FROM users WHERE id = ?", id);
+        update("DELETE FROM users WHERE id = ?", id);
     }
 
     public void addFriend(Integer userId, Integer friendId) {

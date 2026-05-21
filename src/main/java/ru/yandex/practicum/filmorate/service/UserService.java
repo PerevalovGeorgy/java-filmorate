@@ -59,6 +59,12 @@ public class UserService {
         return userMapper.toDto(updatedUser);
     }
 
+    public void deleteUser(Integer id) {
+        log.info("Запрос на удаление пользователя с id - {}", id);
+        findById(id);
+        userStorage.deleteUser(id);
+    }
+
     public void addFriend(Integer userId, Integer friendId) {
         log.info("Запрос: добавление в друзья. К кому: id={}, кто: id={}", userId, friendId);
         checkUserExists(userId);

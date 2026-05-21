@@ -69,6 +69,11 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
     }
 
     @Override
+    public void deleteFilm(Integer filmId) {
+        update("DELETE FROM films WHERE id = ?", filmId);
+    }
+
+    @Override
     public boolean existsById(Integer id) {
         Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM films WHERE id = ?", Integer.class, id);
         return count != null && count > 0;

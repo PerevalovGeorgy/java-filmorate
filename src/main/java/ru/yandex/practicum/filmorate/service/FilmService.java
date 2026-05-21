@@ -78,6 +78,12 @@ public class FilmService {
         return filmMapper.toDto(createdFilm);
     }
 
+    public void deleteFilm(Integer id){
+        log.info("Запрос на удаление фильма с id - {}", id);
+        findById(id);
+        filmStorage.deleteFilm(id);
+    }
+
     public FilmDto update(UpdateFilmDto dto) {
         log.info("Запрос на обновление фильма с id={}", dto.getId());
         if (dto.getId() == null) {
