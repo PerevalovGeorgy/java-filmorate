@@ -78,7 +78,7 @@ public class FilmService {
         return filmMapper.toDto(createdFilm);
     }
 
-    public void deleteFilm(Integer id){
+    public void deleteFilm(Integer id) {
         log.info("Запрос на удаление фильма с id - {}", id);
         findById(id);
         filmStorage.deleteFilm(id);
