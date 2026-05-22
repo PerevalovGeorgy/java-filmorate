@@ -17,12 +17,12 @@ public class GenreRepository {
     private final GenreRowMapper genreRowMapper;
 
     public Collection<Genre> findAll() {
-        String sql = "SELECT id FROM Genre ORDER BY id ASC";
+        String sql = "SELECT id, name FROM genres ORDER BY id ASC ";
         return jdbc.query(sql, genreRowMapper);
     }
 
     public Optional<Genre> findById(Integer id) {
-        String sql = "SELECT id FROM Genre WHERE id = ?";
+        String sql = "SELECT id, name FROM genres WHERE id = ?";
         List<Genre> genres = jdbc.query(sql, genreRowMapper, id);
         return genres.stream().findFirst();
     }
