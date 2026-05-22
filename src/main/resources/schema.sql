@@ -66,13 +66,13 @@ CREATE TABLE IF NOT EXISTS reviews (
     useful INTEGER DEFAULT 0 NOT NULL,
     CONSTRAINT fk_reviews_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_reviews_film FOREIGN KEY (film_id) REFERENCES films(id) ON DELETE CASCADE,
-    CONSTRAINT uq_user_film UNIQUE (user_id, film_id) -- Ограничение: один отзыв на фильм от одного пользователя
+    CONSTRAINT uq_user_film UNIQUE (user_id, film_id)
 );
 
 CREATE TABLE IF NOT EXISTS review_likes (
     review_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
-    is_like BOOLEAN NOT NULL, -- TRUE для лайка, FALSE для дизлайка
+    is_like BOOLEAN NOT NULL,
     PRIMARY KEY (review_id, user_id),
     CONSTRAINT fk_review_likes_review FOREIGN KEY (review_id) REFERENCES reviews(id) ON DELETE CASCADE,
     CONSTRAINT fk_review_likes_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
