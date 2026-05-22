@@ -6,14 +6,13 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
 
 @Repository
-public class FilmRepository extends BaseRepository<Film> implements FilmStorage {
+public class FilmRepository extends BaseRepository<Film> {
     private final JdbcTemplate jdbc;
 
     public FilmRepository(JdbcTemplate jdbc, FilmRowMapper mapper) {
@@ -21,7 +20,6 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         this.jdbc = jdbc;
     }
 
-    @Override
     public Collection<Film> findAll() {
         String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
                 "m.name AS mpa_name " +
@@ -32,7 +30,6 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         return films;
     }
 
-    @Override
     public Optional<Film> findById(Integer id) {
         String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
                 "m.name AS mpa_name " +
@@ -44,7 +41,6 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         return filmOpt;
     }
 
-    @Override
     public Film create(Film film) {
         String sql = "INSERT INTO films (name, description, release_date, duration, mpa_rating_id) " +
                 "VALUES (?, ?, ?, ?, ?)";
@@ -55,7 +51,6 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         return film;
     }
 
-    @Override
     public Film update(Film film) {
         String sql = "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, mpa_rating_id = ? " +
                 "WHERE id = ?";
@@ -68,28 +63,23 @@ public class FilmRepository extends BaseRepository<Film> implements FilmStorage 
         return film;
     }
 
-    @Override
     public void deleteFilm(Integer filmId) {
         update("DELETE FROM films WHERE id = ?", filmId);
     }
 
-    @Override
     public boolean existsById(Integer id) {
         Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM films WHERE id = ?", Integer.class, id);
         return count != null && count > 0;
     }
 
-    @Override
     public void addLike(Integer filmId, Integer userId) {
         update("INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)", filmId, userId);
     }
 
-    @Override
     public void removeLike(Integer filmId, Integer userId) {
         update("DELETE FROM film_likes WHERE film_id = ? AND user_id = ?", filmId, userId);
     }
 
-    @Override
     public Collection<Film> getPopularFilms(Integer count) {
         String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
                 "m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +

@@ -65,4 +65,11 @@ public class UserRepository extends BaseRepository<User> {
                 "WHERE f1.user_id = ? AND f2.user_id = ?";
         return findMany(sql, userId, otherId);
     }
+
+    public void confirmFriendship(Integer userId, Integer friendId) {
+        String sql = "UPDATE friendships " +
+                "SET friendship_status_id = (SELECT id FROM friendship_statuses WHERE name = 'CONFIRMED') " +
+                "WHERE user_id = ? AND friend_id = ?";
+        jdbc.update(sql, userId, friendId);
+    }
 }

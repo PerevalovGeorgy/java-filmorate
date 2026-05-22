@@ -1,8 +1,11 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.FilmRepository;
+import ru.yandex.practicum.filmorate.dal.GenreRepository;
+import ru.yandex.practicum.filmorate.dal.MpaRepository;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.NewFilmDto;
 import ru.yandex.practicum.filmorate.dto.UpdateFilmDto;
@@ -11,9 +14,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.GenreStorage;
-import ru.yandex.practicum.filmorate.storage.MpaRatingStorage;
+
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -21,37 +22,27 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@AllArgsConstructor
 public class FilmService {
-    private final FilmStorage filmStorage;
+    private final FilmRepository filmRepository;
     private final UserService userService;
     private final FilmMapper filmMapper;
-    private final MpaRatingStorage mpaRatingStorage;
-    private final GenreStorage genreStorage;
+    private final MpaRepository mpaRepository;
+    private final GenreRepository genreRepository;
 
     private static final LocalDate MINDATE = LocalDate.of(1895, 12, 28);
 
-    public FilmService(@Qualifier("filmRepository") FilmStorage filmStorage,
-                       UserService userService,
-                       FilmMapper filmMapper,
-                       MpaRatingStorage mpaRatingStorage,
-                       GenreStorage genreStorage) {
-        this.filmStorage = filmStorage;
-        this.userService = userService;
-        this.filmMapper = filmMapper;
-        this.mpaRatingStorage = mpaRatingStorage;
-        this.genreStorage = genreStorage;
-    }
 
     public Collection<FilmDto> findAll() {
         log.info("Запрос на получение всех фильмов");
-        return filmStorage.findAll().stream()
+        return filmRepository.findAll().stream()
                 .map(filmMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     public FilmDto findById(Integer id) {
         log.info("Запрос на получение фильма с id={}", id);
-        return filmStorage.findById(id)
+        return filmRepository.findById(id)
                 .map(filmMapper::toDto)
                 .orElseThrow(() -> new MoviePresenceInListException("Фильм с id=" + id + " не найден"));
     }
@@ -61,27 +52,27 @@ public class FilmService {
         validateFilmDatesAndConstraints(dto.getName(), dto.getReleaseDate(), dto.getDuration());
 
         if (dto.getMpa() != null && dto.getMpa().getId() != null) {
-            mpaRatingStorage.findById(dto.getMpa().getId())
+            mpaRepository.findById(dto.getMpa().getId())
                     .orElseThrow(() -> new NotFoundException("Рейтинг MPA с id " + dto.getMpa().getId() + " не найден"));
         }
 
         if (dto.getGenres() != null) {
             dto.getGenres().forEach(genreDto -> {
-                if (!genreStorage.existsById(genreDto.getId())) {
+                if (!genreRepository.existsById(genreDto.getId())) {
                     throw new NotFoundException("Жанр с id " + genreDto.getId() + " не найден");
                 }
             });
         }
 
         Film film = filmMapper.toModel(dto);
-        Film createdFilm = filmStorage.create(film);
+        Film createdFilm = filmRepository.create(film);
         return filmMapper.toDto(createdFilm);
     }
 
     public void deleteFilm(Integer id) {
         log.info("Запрос на удаление фильма с id - {}", id);
         findById(id);
-        filmStorage.deleteFilm(id);
+        filmRepository.deleteFilm(id);
     }
 
     public FilmDto update(UpdateFilmDto dto) {
@@ -90,51 +81,51 @@ public class FilmService {
             log.warn("Id фильма не указан при обновлении");
             throw new ValidationException("Id должен быть указан");
         }
-        if (!filmStorage.existsById(dto.getId())) {
+        if (!filmRepository.existsById(dto.getId())) {
             log.warn("Фильм с id = {} не найден при обновлении", dto.getId());
             throw new MoviePresenceInListException("Фильм с id = " + dto.getId() + " не найден");
         }
         validateFilmDatesAndConstraints(dto.getName(), dto.getReleaseDate(), dto.getDuration());
 
         if (dto.getMpa() != null && dto.getMpa().getId() != null) {
-            mpaRatingStorage.findById(dto.getMpa().getId())
+            mpaRepository.findById(dto.getMpa().getId())
                     .orElseThrow(() -> new NotFoundException("Рейтинг MPA с id " + dto.getMpa().getId() + " не найден"));
         }
 
         if (dto.getGenres() != null) {
             dto.getGenres().forEach(genreDto -> {
-                if (!genreStorage.existsById(genreDto.getId())) {
+                if (!genreRepository.existsById(genreDto.getId())) {
                     throw new NotFoundException("Жанр с id " + genreDto.getId() + " не найден");
                 }
             });
         }
 
         Film film = filmMapper.toModel(dto);
-        Film updatedFilm = filmStorage.update(film);
+        Film updatedFilm = filmRepository.update(film);
         return filmMapper.toDto(updatedFilm);
     }
 
     public void setLikeFilm(Integer filmId, Integer userId) {
         log.info("Запрос: лайк фильму id={} от пользователя id={}", filmId, userId);
-        if (!filmStorage.existsById(filmId)) {
+        if (!filmRepository.existsById(filmId)) {
             throw new MoviePresenceInListException("Такого фильма нет в списке фильмов");
         }
         userService.findById(userId);
-        filmStorage.addLike(filmId, userId);
+        filmRepository.addLike(filmId, userId);
     }
 
     public void deleteLikeFilm(Integer filmId, Integer userId) {
         log.info("Запрос: удаление лайка у фильма id={} пользователем id={}", filmId, userId);
-        if (!filmStorage.existsById(filmId)) {
+        if (!filmRepository.existsById(filmId)) {
             throw new MoviePresenceInListException("Такого фильма нет в списке фильмов");
         }
         userService.findById(userId);
-        filmStorage.removeLike(filmId, userId);
+        filmRepository.removeLike(filmId, userId);
     }
 
     public Collection<FilmDto> getFilmsByLikes(Integer count) {
         log.info("Запрос на получение популярных фильмов, лимит: {}", count);
-        return filmStorage.getPopularFilms(count).stream()
+        return filmRepository.getPopularFilms(count).stream()
                 .map(filmMapper::toDto)
                 .collect(Collectors.toList());
     }

@@ -26,4 +26,10 @@ public class GenreRepository {
         List<Genre> genres = jdbc.query(sql, genreRowMapper, id);
         return genres.stream().findFirst();
     }
+
+    public boolean existsById(Integer id) {
+        String sql = "SELECT COUNT(*) FROM genres WHERE id = ?";
+        Integer count = jdbc.queryForObject(sql, Integer.class, id);
+        return count != null && count > 0;
+    }
 }
