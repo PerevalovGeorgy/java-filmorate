@@ -17,12 +17,12 @@ public class MpaRepository {
     private final MpaRatingRowMapper mpaRowMapper;
 
     public Collection<MpaRating> findAll() {
-        String sql = "SELECT id FROM MpaRating ORDER BY id ASC";
+        String sql = "SELECT id, name FROM mpa_ratings ORDER BY id ASC";
         return jdbc.query(sql, mpaRowMapper);
     }
 
     public Optional<MpaRating> findById(Integer id) {
-        String sql = "SELECT id FROM MpaRating WHERE id = ?";
+        String sql = "SELECT id, name FROM mpa_ratings WHERE id = ?";
         List<MpaRating> mpaRatings = jdbc.query(sql, mpaRowMapper, id);
         return mpaRatings.stream().findFirst();
     }
