@@ -1,14 +1,14 @@
-DELETE FROM film_genres;
-DELETE FROM film_likes;
-DELETE FROM friendships;
-DELETE FROM film_directors;
-DELETE FROM films;
-DELETE FROM users;
-DELETE FROM directors;
+--DELETE FROM film_genres;
+--DELETE FROM film_likes;
+--DELETE FROM friendships;
+--DELETE FROM films;
+--DELETE FROM users;
+--DELETE FROM review_likes;
+--DELETE FROM reviews;
 
-ALTER TABLE users ALTER COLUMN id RESTART WITH 1;
-ALTER TABLE films ALTER COLUMN id RESTART WITH 1;
-ALTER TABLE directors ALTER COLUMN id RESTART WITH 1;
+--ALTER TABLE users ALTER COLUMN id RESTART WITH 1;
+--ALTER TABLE films ALTER COLUMN id RESTART WITH 1;
+--ALTER TABLE reviews ALTER COLUMN id RESTART WITH 1;
 
 MERGE INTO friendship_statuses KEY (id) VALUES (1, 'PENDING');
 MERGE INTO friendship_statuses KEY (id) VALUES (2, 'CONFIRMED');
