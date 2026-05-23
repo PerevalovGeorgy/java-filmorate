@@ -2,15 +2,14 @@ package ru.yandex.practicum.filmorate.service;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.FilmRepository;
 import ru.yandex.practicum.filmorate.dal.ReviewRepository;
+import ru.yandex.practicum.filmorate.dal.UserRepository;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.Collection;
 
@@ -18,20 +17,19 @@ import java.util.Collection;
 @Service
 public class ReviewService {
 
-    //private final ReviewStorage reviewStorage;
     private final ReviewRepository reviewRepository;
-    private final FilmStorage filmStorage;
-    private final UserStorage userStorage;
+    private final FilmRepository filmRepository;
+    private final UserRepository userRepository;
 
-    public ReviewService(//@Qualifier("reviewRepository") ReviewStorage reviewStorage,
-                         ReviewRepository reviewRepository,
-                         @Qualifier("filmRepository") FilmStorage filmStorage,
-                         @Qualifier("userDbStorage") UserStorage userStorage) {
+    public ReviewService(
+            ReviewRepository reviewRepository,
+            FilmRepository filmRepository,
+            UserRepository userRepository
+    ) {
 
-        //this.reviewStorage = reviewStorage;
         this.reviewRepository = reviewRepository;
-        this.filmStorage = filmStorage;
-        this.userStorage = userStorage;
+        this.filmRepository = filmRepository;
+        this.userRepository = userRepository;
     }
 
     private Review getReviewOrThrow(Integer reviewId) {
@@ -40,12 +38,12 @@ public class ReviewService {
     }
 
     private Film getFilmOrThrow(Integer filmId) {
-        return filmStorage.findById(filmId)
+        return filmRepository.findById(filmId)
                 .orElseThrow(() -> new NotFoundException("Фильм с ID " + filmId + " не найден"));
     }
 
     private User getUserOrThrow(Integer userId) {
-        return userStorage.findById(userId)
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с ID " + userId + " не найден"));
     }
 
