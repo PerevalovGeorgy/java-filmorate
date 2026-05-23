@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate;
 
+
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,6 +10,8 @@ import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import ru.yandex.practicum.filmorate.dal.FilmRepository;
+import ru.yandex.practicum.filmorate.dal.GenreRepository;
+import ru.yandex.practicum.filmorate.dal.MpaRepository;
 import ru.yandex.practicum.filmorate.dal.UserRepository;
 import ru.yandex.practicum.filmorate.dal.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.dal.mappers.GenreRowMapper;
@@ -18,15 +21,12 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.GenreDbStorage;
-import ru.yandex.practicum.filmorate.storage.MpaRatingDbStorage;
 
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.Optional;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @JdbcTest
 @AutoConfigureTestDatabase
@@ -37,17 +37,18 @@ import static org.assertj.core.api.Assertions.assertThat;
         UserRowMapper.class,
         FilmRepository.class,
         FilmRowMapper.class,
-        GenreDbStorage.class,
+        GenreRepository.class,
         GenreRowMapper.class,
-        MpaRatingDbStorage.class,
+        MpaRepository.class,
         MpaRatingRowMapper.class
 })
+
 class FilmorateApplicationTests {
 
-    private final UserRepository userStorage;
-    private final FilmRepository filmStorage;
-    private final GenreDbStorage genreRepository;
-    private final MpaRatingDbStorage mpaRepository;
+    private final UserRepository userRepository;
+    private final FilmRepository filmRepository;
+    private final GenreRepository genreRepository;
+    private final MpaRepository mpaRepository;
 
     private User user1;
     private User user2;
@@ -86,8 +87,8 @@ class FilmorateApplicationTests {
 
     @Test
     void testCreateAndFindUserById() {
-        User createdUser = userStorage.create(user1);
-        Optional<User> userOptional = userStorage.findById(createdUser.getId());
+        User createdUser = userRepository.create(user1);
+        Optional<User> userOptional = userRepository.findById(createdUser.getId());
 
         assertThat(userOptional)
                 .isPresent()
@@ -100,20 +101,20 @@ class FilmorateApplicationTests {
 
     @Test
     void testFindAllUsers() {
-        userStorage.create(user1);
-        userStorage.create(user2);
-        Collection<User> users = userStorage.findAll();
+        userRepository.create(user1);
+        userRepository.create(user2);
+        Collection<User> users = userRepository.findAll();
 
         assertThat(users).hasSize(2);
     }
 
     @Test
     void testUpdateUser() {
-        User createdUser = userStorage.create(user1);
+        User createdUser = userRepository.create(user1);
         createdUser.setName("Updated Name");
-        userStorage.update(createdUser);
+        userRepository.update(createdUser);
 
-        Optional<User> updatedUserOpt = userStorage.findById(createdUser.getId());
+        Optional<User> updatedUserOpt = userRepository.findById(createdUser.getId());
         assertThat(updatedUserOpt)
                 .isPresent()
                 .hasValueSatisfying(user -> assertThat(user).hasFieldOrPropertyWithValue("name", "Updated Name"));
@@ -121,41 +122,41 @@ class FilmorateApplicationTests {
 
     @Test
     void testExistsById() {
-        User createdUser = userStorage.create(user1);
+        User createdUser = userRepository.create(user1);
 
-        assertThat(userStorage.existsById(createdUser.getId())).isTrue();
-        assertThat(userStorage.existsById(999)).isFalse();
+        assertThat(userRepository.existsById(createdUser.getId())).isTrue();
+        assertThat(userRepository.existsById(999)).isFalse();
     }
 
     @Test
     void testDeleteUser() {
-        User createdUser = userStorage.create(user1);
-        userStorage.deleteById(createdUser.getId());
+        User createdUser = userRepository.create(user1);
+        userRepository.deleteById(createdUser.getId());
 
-        assertThat(userStorage.findById(createdUser.getId())).isEmpty();
+        assertThat(userRepository.findById(createdUser.getId())).isEmpty();
     }
 
     @Test
     void testFriendsLogicOneWay() {
-        User u1 = userStorage.create(user1);
-        User u2 = userStorage.create(user2);
+        User u1 = userRepository.create(user1);
+        User u2 = userRepository.create(user2);
 
-        userStorage.addFriend(u1.getId(), u2.getId());
+        userRepository.addFriend(u1.getId(), u2.getId());
 
-        Collection<User> u1Friends = userStorage.getFriends(u1.getId());
+        Collection<User> u1Friends = userRepository.getFriends(u1.getId());
         assertThat(u1Friends).hasSize(1).extracting(User::getId).contains(u2.getId());
 
-        Collection<User> u2Friends = userStorage.getFriends(u2.getId());
+        Collection<User> u2Friends = userRepository.getFriends(u2.getId());
         assertThat(u2Friends).isEmpty();
 
-        userStorage.removeFriend(u1.getId(), u2.getId());
-        assertThat(userStorage.getFriends(u1.getId())).isEmpty();
+        userRepository.removeFriend(u1.getId(), u2.getId());
+        assertThat(userRepository.getFriends(u1.getId())).isEmpty();
     }
 
     @Test
     void testCreateAndFindFilmById() {
-        Film createdFilm = filmStorage.create(film1);
-        Optional<Film> filmOptional = filmStorage.findById(createdFilm.getId());
+        Film createdFilm = filmRepository.create(film1);
+        Optional<Film> filmOptional = filmRepository.findById(createdFilm.getId());
 
         assertThat(filmOptional)
                 .isPresent()
@@ -169,16 +170,16 @@ class FilmorateApplicationTests {
 
     @Test
     void testUpdateFilmAndGenres() {
-        Film createdFilm = filmStorage.create(film1);
+        Film createdFilm = filmRepository.create(film1);
         createdFilm.setName("Inception Updated");
 
         LinkedHashSet<Genre> genres = new LinkedHashSet<>();
         genres.add(genreComedy);
         createdFilm.setGenres(genres);
 
-        filmStorage.update(createdFilm);
+        filmRepository.update(createdFilm);
 
-        Optional<Film> updatedFilmOpt = filmStorage.findById(createdFilm.getId());
+        Optional<Film> updatedFilmOpt = filmRepository.findById(createdFilm.getId());
         assertThat(updatedFilmOpt)
                 .isPresent()
                 .hasValueSatisfying(film -> {
@@ -189,24 +190,29 @@ class FilmorateApplicationTests {
 
     @Test
     void testLikesAndPopularFilms() {
-        Film f1 = filmStorage.create(film1);
-        User u1 = userStorage.create(user1);
+        Film f1 = filmRepository.create(film1);
+        User u1 = userRepository.create(user1);
 
-        filmStorage.addLike(f1.getId(), u1.getId());
+        filmRepository.addLike(f1.getId(), u1.getId());
 
-        Collection<Film> popular = filmStorage.getPopularFilms(1);
+        Collection<Film> popular = filmRepository.getPopularFilms(1);
         assertThat(popular).hasSize(1).extracting(Film::getId).contains(f1.getId());
 
-        filmStorage.removeLike(f1.getId(), u1.getId());
+        filmRepository.removeLike(f1.getId(), u1.getId());
     }
 
     @Test
     void testFindAllGenresFromDb() {
         Collection<Genre> genres = genreRepository.findAll();
-        assertThat(genres)
-                .isNotEmpty()
-                .extracting(Genre::getId)
-                .contains(1, 2, 3);
+
+        List<Integer> expectedIds = List.of(1, 2, 3);
+        List<Integer> actualIds = new ArrayList<>();
+
+        for (Genre genre : genres) {
+            actualIds.add(genre.getId());
+        }
+
+        assertTrue(actualIds.containsAll(expectedIds));
     }
 
     @Test
