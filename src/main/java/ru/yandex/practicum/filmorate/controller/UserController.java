@@ -42,6 +42,12 @@ public class UserController {
         return userService.update(userDto);
     }
 
+    @DeleteMapping("/{id}")
+    public void deleteUser(@PathVariable Integer id) {
+        log.info("DELETE-запрос: удаление пользователя id={}", id);
+        userService.deleteUser(id);
+    }
+
     @PutMapping("/{id}/friends/{friendId}")
     public void addFriend(@PathVariable Integer id, @PathVariable Integer friendId) {
         log.info("PUT-запрос: Пользователь id={} добавляет в друзья id={}", id, friendId);

@@ -71,6 +71,10 @@ public class FilmRepository extends BaseRepository<Film> {
         return film;
     }
 
+    public void deleteFilm(Integer filmId) {
+        update("DELETE FROM films WHERE id = ?", filmId);
+    }
+
     public boolean existsById(Integer id) {
         Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM films WHERE id = ?", Integer.class, id);
         return count != null && count > 0;

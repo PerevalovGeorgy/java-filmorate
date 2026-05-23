@@ -1,10 +1,14 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dal.FilmRepository;
 import ru.yandex.practicum.filmorate.dal.DirectorRepository;
+import ru.yandex.practicum.filmorate.dal.FilmRepository;
+import ru.yandex.practicum.filmorate.dal.GenreRepository;
+import ru.yandex.practicum.filmorate.dal.MpaRepository;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.NewFilmDto;
 import ru.yandex.practicum.filmorate.dto.UpdateFilmDto;
@@ -22,16 +26,18 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@AllArgsConstructor
 @RequiredArgsConstructor
 public class FilmService {
     private final FilmRepository filmRepository;
     private final DirectorRepository directorRepository;
     private final UserService userService;
     private final FilmMapper filmMapper;
-    private final MpaRatingStorage mpaRatingStorage;
-    private final GenreStorage genreStorage;
+    private final MpaRepository mpaRepository;
+    private final GenreRepository genreRepository;
 
     private static final LocalDate MINDATE = LocalDate.of(1895, 12, 28);
+
 
     public Collection<FilmDto> findAll() {
         log.info("Запрос на получение всех фильмов");
@@ -52,13 +58,13 @@ public class FilmService {
         validateFilmDatesAndConstraints(dto.getName(), dto.getReleaseDate(), dto.getDuration());
 
         if (dto.getMpa() != null && dto.getMpa().getId() != null) {
-            mpaRatingStorage.findById(dto.getMpa().getId())
+            mpaRepository.findById(dto.getMpa().getId())
                     .orElseThrow(() -> new NotFoundException("Рейтинг MPA с id " + dto.getMpa().getId() + " не найден"));
         }
 
         if (dto.getGenres() != null) {
             dto.getGenres().forEach(genreDto -> {
-                if (!genreStorage.existsById(genreDto.getId())) {
+                if (!genreRepository.existsById(genreDto.getId())) {
                     throw new NotFoundException("Жанр с id " + genreDto.getId() + " не найден");
                 }
             });
@@ -77,6 +83,12 @@ public class FilmService {
         return filmMapper.toDto(createdFilm);
     }
 
+    public void deleteFilm(Integer id) {
+        log.info("Запрос на удаление фильма с id - {}", id);
+        findById(id);
+        filmRepository.deleteFilm(id);
+    }
+
     public FilmDto update(UpdateFilmDto dto) {
         log.info("Запрос на обновление фильма с id={}", dto.getId());
         if (dto.getId() == null) {
@@ -90,13 +102,13 @@ public class FilmService {
         validateFilmDatesAndConstraints(dto.getName(), dto.getReleaseDate(), dto.getDuration());
 
         if (dto.getMpa() != null && dto.getMpa().getId() != null) {
-            mpaRatingStorage.findById(dto.getMpa().getId())
+            mpaRepository.findById(dto.getMpa().getId())
                     .orElseThrow(() -> new NotFoundException("Рейтинг MPA с id " + dto.getMpa().getId() + " не найден"));
         }
 
         if (dto.getGenres() != null) {
             dto.getGenres().forEach(genreDto -> {
-                if (!genreStorage.existsById(genreDto.getId())) {
+                if (!genreRepository.existsById(genreDto.getId())) {
                     throw new NotFoundException("Жанр с id " + genreDto.getId() + " не найден");
                 }
             });
