@@ -1,9 +1,10 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dal.FilmRepository;
+import ru.yandex.practicum.filmorate.dal.DirectorRepository;
 import ru.yandex.practicum.filmorate.dal.GenreRepository;
 import ru.yandex.practicum.filmorate.dal.MpaRepository;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
@@ -15,16 +16,16 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 
-
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class FilmService {
     private final FilmRepository filmRepository;
+    private final DirectorRepository directorRepository;
     private final UserService userService;
     private final FilmMapper filmMapper;
     private final MpaRepository mpaRepository;
@@ -60,6 +61,14 @@ public class FilmService {
             dto.getGenres().forEach(genreDto -> {
                 if (!genreRepository.existsById(genreDto.getId())) {
                     throw new NotFoundException("Жанр с id " + genreDto.getId() + " не найден");
+                }
+            });
+        }
+
+        if (dto.getDirector() != null) {
+            dto.getDirector().forEach(directorDto -> {
+                if (!directorRepository.existsById(directorDto.getId())) {
+                    throw new NotFoundException("Режиссер с id " + directorDto.getId() + " не найден");
                 }
             });
         }
@@ -100,6 +109,14 @@ public class FilmService {
             });
         }
 
+        if (dto.getDirector() != null) {
+            dto.getDirector().forEach(directorDto -> {
+                if (!directorRepository.existsById(directorDto.getId())) {
+                    throw new NotFoundException("Режиссер с id " + directorDto.getId() + " не найден");
+                }
+            });
+        }
+
         Film film = filmMapper.toModel(dto);
         Film updatedFilm = filmRepository.update(film);
         return filmMapper.toDto(updatedFilm);
@@ -126,6 +143,16 @@ public class FilmService {
     public Collection<FilmDto> getFilmsByLikes(Integer count) {
         log.info("Запрос на получение популярных фильмов, лимит: {}", count);
         return filmRepository.getPopularFilms(count).stream()
+                .map(filmMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public Collection<FilmDto> getFilmsByDirectorId(Integer directorId, String sortBy) {
+        log.info("Запрос на получение фильмов режиссера с id={} с сортировкой по: {}", directorId, sortBy);
+        if (!directorRepository.existsById(directorId)) {
+            throw new NotFoundException("Режиссер с id " + directorId + " не найден");
+        }
+        return filmRepository.getFilmsByDirectorId(directorId, sortBy).stream()
                 .map(filmMapper::toDto)
                 .collect(Collectors.toList());
     }
