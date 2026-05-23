@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.dal;
 
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mappers.FilmRowMapper;
@@ -11,6 +12,7 @@ import ru.yandex.practicum.filmorate.model.Genre;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 public class FilmRepository extends BaseRepository<Film> {
@@ -239,18 +241,19 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Collection<Film> getCommonFilms(Integer userId, Integer friendId) {
-        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id " +
+        String sql =  "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id," +
+                " mr.name as mpa_name " +
                 "FROM films f " +
-                "JOIN film_likes f1 ON f.id=f1.film_id and f1.user_id = ? " +
-                "JOIN film_likes f2 ON f.id=f2.film_id and f2.user_id = ? " +
-                "LEFT JOIN ( " +
-                "SELECT film_id, COUNT(user_id) AS rate " +
-                "FROM film_likes " +
-                "GROUP BY film_id ) sub ON f.id = sub.film_id " +
-                "ORDER BY COALESCE(sub.rate, 0) DESC";
+                "LEFT JOIN mpa_ratings mr ON f.mpa_rating_id = mr.id " +
+                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
+                "WHERE f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?) " +
+                "  AND f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?) " +
+                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id " +
+                "ORDER BY COUNT(fl.user_id) DESC";
         Collection<Film> films = findMany(sql, userId, friendId);
         loadGenresForFilms(films);
         loadDirectorForFilms(films);
         return films;
     }
+
 }
