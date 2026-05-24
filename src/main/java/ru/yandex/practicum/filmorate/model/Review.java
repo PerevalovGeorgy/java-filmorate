@@ -15,7 +15,7 @@ public class Review {
     @NotBlank(message = "Содержимое отзыва не может быть пустым")
     private String content;
 
-    @NotNull(message = "Идентификатор пользователя должен быть указан")
+    @NotNull(message = "Тип отзыва (положительный/отрицательный) должен быть указан")
     private Boolean isPositive;
 
     @NotNull(message = "Идентификатор пользователя должен быть указан")
