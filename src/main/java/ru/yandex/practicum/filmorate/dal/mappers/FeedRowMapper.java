@@ -9,7 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @Component
-public class FeedRowMapper implements RowMapper<Feed>{
+public class FeedRowMapper implements RowMapper<Feed> {
     @Override
     public Feed mapRow(ResultSet rs, int rowNum) throws SQLException {
         return Feed.builder()

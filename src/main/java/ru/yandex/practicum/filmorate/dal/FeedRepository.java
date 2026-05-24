@@ -8,7 +8,7 @@ import ru.yandex.practicum.filmorate.model.Feed;
 import java.util.Collection;
 
 @Repository
-public class FeedRepository extends BaseRepository<Feed>{
+public class FeedRepository extends BaseRepository<Feed> {
 
     public FeedRepository(JdbcTemplate jdbc, FeedRowMapper mapper) {
         super(jdbc, mapper);
@@ -30,14 +30,4 @@ public class FeedRepository extends BaseRepository<Feed>{
         String sql = "SELECT * FROM events WHERE user_id = ? ORDER BY event_id ASC";
         return findMany(sql, userId);
     }
-
-
-
-
-
-
-
-
-
-
 }
