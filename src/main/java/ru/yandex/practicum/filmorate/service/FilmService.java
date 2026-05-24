@@ -3,10 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.dal.FilmRepository;
-import ru.yandex.practicum.filmorate.dal.DirectorRepository;
-import ru.yandex.practicum.filmorate.dal.GenreRepository;
-import ru.yandex.practicum.filmorate.dal.MpaRepository;
+import ru.yandex.practicum.filmorate.dal.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.NewFilmDto;
 import ru.yandex.practicum.filmorate.dto.UpdateFilmDto;
@@ -25,6 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FilmService {
     private final FilmRepository filmRepository;
+    private final UserRepository userRepository;
     private final DirectorRepository directorRepository;
     private final UserService userService;
     private final FilmMapper filmMapper;
@@ -146,6 +144,19 @@ public class FilmService {
     public Collection<FilmDto> getFilmsByLikes(Integer count) {
         log.info("Запрос на получение популярных фильмов, лимит: {}", count);
         return filmRepository.getPopularFilms(count).stream()
+                .map(filmMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public Collection<FilmDto> getCommonFilmsOrderByLikes(Integer userId, Integer friendId) {
+        log.info("Запрос на получение общих фильмов двух пользователей, user1 c id = {} и user2 c id = {}", userId, friendId);
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException("Пользователь с id = " + userId + " не найден");
+        }
+        if (!userRepository.existsById(friendId)) {
+            throw new NotFoundException("Пользователь (друг) с id = " + friendId + " не найден");
+        }
+        return filmRepository.getCommonFilms(userId, friendId).stream()
                 .map(filmMapper::toDto)
                 .collect(Collectors.toList());
     }
