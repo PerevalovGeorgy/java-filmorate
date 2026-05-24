@@ -30,6 +30,7 @@ public class FilmService {
     private final FilmMapper filmMapper;
     private final MpaRepository mpaRepository;
     private final GenreRepository genreRepository;
+    private final FeedService feedService;
 
     private static final LocalDate MINDATE = LocalDate.of(1895, 12, 28);
 
@@ -129,6 +130,7 @@ public class FilmService {
         }
         userService.findById(userId);
         filmRepository.addLike(filmId, userId);
+        feedService.logEvent(userId, "LIKE", "ADD", filmId);
     }
 
     public void deleteLikeFilm(Integer filmId, Integer userId) {
@@ -138,6 +140,7 @@ public class FilmService {
         }
         userService.findById(userId);
         filmRepository.removeLike(filmId, userId);
+        feedService.logEvent(userId, "LIKE", "REMOVE", filmId);
     }
 
     public Collection<FilmDto> getFilmsByLikes(Integer count) {
