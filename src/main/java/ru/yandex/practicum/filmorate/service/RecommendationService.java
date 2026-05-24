@@ -55,12 +55,12 @@ public class RecommendationService {
         User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
         return userRepository.findAll().stream()
                 .filter(user1 -> !user1.getId().equals(id))
-                .map(userMapper::toDto)
                 .sorted(Comparator.comparing(
                         user1 -> filmRepository.getLikedFilmsByUser(user1.getId()).stream()
                                 .filter(likedFilms::contains)
                                 .count(), Comparator.reverseOrder()
                 ))
+                .map(userMapper::toDto)
                 .toList();
     }
 }

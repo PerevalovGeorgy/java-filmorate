@@ -24,7 +24,6 @@ public class FilmService {
     private final FilmRepository filmRepository;
     private final UserRepository userRepository;
     private final DirectorRepository directorRepository;
-    private final UserService userService;
     private final FilmMapper filmMapper;
     private final MpaRepository mpaRepository;
     private final GenreRepository genreRepository;
@@ -125,7 +124,7 @@ public class FilmService {
         if (!filmRepository.existsById(filmId)) {
             throw new MoviePresenceInListException("Такого фильма нет в списке фильмов");
         }
-        userService.findById(userId);
+        userRepository.findById(userId);
         filmRepository.addLike(filmId, userId);
     }
 
@@ -134,7 +133,7 @@ public class FilmService {
         if (!filmRepository.existsById(filmId)) {
             throw new MoviePresenceInListException("Такого фильма нет в списке фильмов");
         }
-        userService.findById(userId);
+        userRepository.findById(userId);
         filmRepository.removeLike(filmId, userId);
     }
 
