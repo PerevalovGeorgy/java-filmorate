@@ -84,6 +84,10 @@ public class FilmRepository extends BaseRepository<Film> {
         update("INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)", filmId, userId);
     }
 
+    public Collection<Film> getLikedFilmsByUser(Integer userId) {
+           return findMany("SELECT film_id FROM film_likes WHERE user_id = ?", userId);
+    }
+
     public void removeLike(Integer filmId, Integer userId) {
         update("DELETE FROM film_likes WHERE film_id = ? AND user_id = ?", filmId, userId);
     }
