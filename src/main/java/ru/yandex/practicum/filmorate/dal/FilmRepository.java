@@ -132,6 +132,56 @@ public class FilmRepository extends BaseRepository<Film> {
         return films;
     }
 
+    public Collection<Film> getPopularFilmsByGenreAndYear(Integer count, Integer genreId, Integer year) {
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
+                "m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
+                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
+                "JOIN film_genres fg ON f.id = fg.film_id " +
+                "WHERE fg.genre_id = ? AND EXTRACT(YEAR FROM f.release_date) = ? " +
+                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, m.name " +
+                "ORDER BY likes_count DESC LIMIT ?";
+
+        Collection<Film> popular = findMany(sql, genreId, year, count);
+
+        loadGenresForFilms(popular);
+        loadDirectorForFilms(popular);
+
+        return popular;
+    }
+
+    public Collection<Film> getPopularFilmsByYear(Integer count, Integer year) {
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
+                "m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
+                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
+                "WHERE EXTRACT(YEAR FROM f.release_date) = ? " +
+                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, m.name " +
+                "ORDER BY likes_count DESC LIMIT ?";
+        Collection<Film> popular = findMany(sql, year, count);
+        loadGenresForFilms(popular);
+        loadDirectorForFilms(popular);
+        return popular;
+    }
+
+    public Collection<Film> getPopularFilmsByGenre(Integer count, Integer genreId) {
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
+                "m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
+                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
+                "JOIN film_genres fg ON f.id = fg.film_id " +
+                "WHERE fg.genre_id = ? " +
+                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, m.name " +
+                "ORDER BY likes_count DESC LIMIT ?";
+        Collection<Film> popular = findMany(sql, genreId, count);
+        loadGenresForFilms(popular);
+        loadDirectorForFilms(popular);
+        return popular;
+    }
+
     private void saveGenres(Film film) {
         if (film.getGenres() == null || film.getGenres().isEmpty()) return;
         String sql = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
