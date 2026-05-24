@@ -287,4 +287,21 @@ public class FilmRepository extends BaseRepository<Film> {
         });
         films.forEach(f -> f.setDirector(map.getOrDefault(f.getId(), new LinkedHashSet<>())));
     }
+
+    public Collection<Film> getCommonFilms(Integer userId, Integer friendId) {
+        String sql =  "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id," +
+                " mr.name as mpa_name " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings mr ON f.mpa_rating_id = mr.id " +
+                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
+                "WHERE f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?) " +
+                "  AND f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?) " +
+                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id " +
+                "ORDER BY COUNT(fl.user_id) DESC";
+        Collection<Film> films = findMany(sql, userId, friendId);
+        loadGenresForFilms(films);
+        loadDirectorForFilms(films);
+        return films;
+    }
+
 }
