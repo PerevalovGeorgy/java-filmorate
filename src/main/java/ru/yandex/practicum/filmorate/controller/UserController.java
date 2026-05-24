@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.service.RecommendationService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
@@ -17,6 +18,7 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final RecommendationService recommendationService;
 
     @GetMapping
     public Collection<UserDto> findAll() {
@@ -76,6 +78,6 @@ public class UserController {
     @GetMapping("/{id}/recommendations")
     public Collection<FilmDto> getRecommendations(@PathVariable Integer id) {
         log.info("Get-запрос на получение рекомендаций по id={}", id);
-        return userService.recommendedFilms(id);
+        return recommendationService.recommendedFilms(id);
     }
 }

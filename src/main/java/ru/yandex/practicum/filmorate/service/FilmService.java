@@ -15,7 +15,6 @@ import ru.yandex.practicum.filmorate.model.Film;
 
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
@@ -165,18 +164,6 @@ public class FilmService {
             throw new NotFoundException("Режиссер с id " + directorId + " не найден");
         }
         return filmRepository.getFilmsByDirectorId(directorId, sortBy).stream()
-                .map(filmMapper::toDto)
-                .collect(Collectors.toList());
-    }
-
-    protected Collection<FilmDto> getFilmsOnlyUserLikes(Integer user1Id, Integer user2Id) {
-        Collection<Film> user1Films = filmRepository.getLikedFilmsByUser(user1Id);
-        Collection<Film> commonFilms = filmRepository.getLikedFilmsByUser(user2Id);
-        if (user1Films == null || commonFilms == null) {
-            throw new NotFoundException("Значение не может быть null");
-        }
-        return user1Films.stream()
-                .filter(Predicate.not(commonFilms::contains))
                 .map(filmMapper::toDto)
                 .collect(Collectors.toList());
     }
