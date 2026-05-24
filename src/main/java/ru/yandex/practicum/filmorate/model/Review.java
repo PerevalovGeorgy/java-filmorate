@@ -12,16 +12,16 @@ import lombok.*;
 public class Review {
     private Integer reviewId;
 
-    @NotBlank(message = "Содержание отзыва не может быть пустым")
+    @NotBlank(message = "Содержимое отзыва не может быть пустым")
     private String content;
 
-    @NotNull(message = "Тип отзыва (isPositive) не может быть null")
+    @NotNull(message = "Идентификатор пользователя должен быть указан")
     private Boolean isPositive;
 
-    @NotNull(message = "ID пользователя не может быть null")
+    @NotNull(message = "Идентификатор пользователя должен быть указан")
     private Integer userId;
 
-    @NotNull(message = "ID фильма не может быть null")
+    @NotNull(message = "Идентификатор фильма должен быть указан")
     private Integer filmId;
 
     private Integer useful = 0;
