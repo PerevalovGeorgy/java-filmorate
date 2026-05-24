@@ -85,7 +85,7 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Collection<Film> getLikedFilmsByUser(Integer userId) {
-           return findMany("SELECT film_id FROM film_likes WHERE user_id = ?", userId);
+        return findMany("SELECT film_id FROM film_likes WHERE user_id = ?", userId);
     }
 
     public void removeLike(Integer filmId, Integer userId) {
@@ -243,7 +243,7 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Collection<Film> getCommonFilms(Integer userId, Integer friendId) {
-        String sql =  "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id," +
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id," +
                 " mr.name as mpa_name " +
                 "FROM films f " +
                 "LEFT JOIN mpa_ratings mr ON f.mpa_rating_id = mr.id " +
