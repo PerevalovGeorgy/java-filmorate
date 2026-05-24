@@ -58,7 +58,7 @@ public class FilmService {
 
         if (dto.getGenres() != null) {
             dto.getGenres().forEach(genreDto -> {
-                if (! genreRepository.existsById(genreDto.getId())) {
+                if (!genreRepository.existsById(genreDto.getId())) {
                     throw new NotFoundException("Жанр с id " + genreDto.getId() + " не найден");
                 }
             });
@@ -66,7 +66,7 @@ public class FilmService {
 
         if (dto.getDirector() != null) {
             dto.getDirector().forEach(directorDto -> {
-                if (! directorRepository.existsById(directorDto.getId())) {
+                if (!directorRepository.existsById(directorDto.getId())) {
                     throw new NotFoundException("Режиссер с id " + directorDto.getId() + " не найден");
                 }
             });
@@ -89,7 +89,7 @@ public class FilmService {
             log.warn("Id фильма не указан при обновлении");
             throw new ValidationException("Id должен быть указан");
         }
-        if (! filmRepository.existsById(dto.getId())) {
+        if (!filmRepository.existsById(dto.getId())) {
             log.warn("Фильм с id = {} не найден при обновлении", dto.getId());
             throw new MoviePresenceInListException("Фильм с id = " + dto.getId() + " не найден");
         }
@@ -102,7 +102,7 @@ public class FilmService {
 
         if (dto.getGenres() != null) {
             dto.getGenres().forEach(genreDto -> {
-                if (! genreRepository.existsById(genreDto.getId())) {
+                if (!genreRepository.existsById(genreDto.getId())) {
                     throw new NotFoundException("Жанр с id " + genreDto.getId() + " не найден");
                 }
             });
@@ -110,7 +110,7 @@ public class FilmService {
 
         if (dto.getDirector() != null) {
             dto.getDirector().forEach(directorDto -> {
-                if (! directorRepository.existsById(directorDto.getId())) {
+                if (!directorRepository.existsById(directorDto.getId())) {
                     throw new NotFoundException("Режиссер с id " + directorDto.getId() + " не найден");
                 }
             });
@@ -123,7 +123,7 @@ public class FilmService {
 
     public void setLikeFilm(Integer filmId, Integer userId) {
         log.info("Запрос: лайк фильму id={} от пользователя id={}", filmId, userId);
-        if (! filmRepository.existsById(filmId)) {
+        if (!filmRepository.existsById(filmId)) {
             throw new MoviePresenceInListException("Такого фильма нет в списке фильмов");
         }
         userService.findById(userId);
@@ -132,7 +132,7 @@ public class FilmService {
 
     public void deleteLikeFilm(Integer filmId, Integer userId) {
         log.info("Запрос: удаление лайка у фильма id={} пользователем id={}", filmId, userId);
-        if (! filmRepository.existsById(filmId)) {
+        if (!filmRepository.existsById(filmId)) {
             throw new MoviePresenceInListException("Такого фильма нет в списке фильмов");
         }
         userService.findById(userId);
@@ -161,7 +161,7 @@ public class FilmService {
 
     public Collection<FilmDto> getFilmsByDirectorId(Integer directorId, String sortBy) {
         log.info("Запрос на получение фильмов режиссера с id={} с сортировкой по: {}", directorId, sortBy);
-        if (! directorRepository.existsById(directorId)) {
+        if (!directorRepository.existsById(directorId)) {
             throw new NotFoundException("Режиссер с id " + directorId + " не найден");
         }
         return filmRepository.getFilmsByDirectorId(directorId, sortBy).stream()
@@ -177,6 +177,10 @@ public class FilmService {
         }
         return user1Films.stream()
                 .filter(Predicate.not(commonFilms::contains))
+                .map(filmMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
     public Collection<FilmDto> getPopularFilmsByGenreAndYear(Integer count, Integer genreId, Integer year) {
         log.info("Запрос на получение популярных фильмов по жанру с id={} за год={}, лимит: {}", genreId, year, count);
 
@@ -192,7 +196,7 @@ public class FilmService {
         }
 
         if (genreId != null) {
-            if (! genreRepository.existsById(genreId)) {
+            if (!genreRepository.existsById(genreId)) {
                 log.warn("Валидация не пройдена: жанр с id={} не найден", genreId);
                 throw new NotFoundException("Жанр с id " + genreId + " не найден");
             }
@@ -213,7 +217,6 @@ public class FilmService {
                 .map(filmMapper::toDto)
                 .collect(Collectors.toList());
     }
-
 
     private void validateFilmDatesAndConstraints(String name, LocalDate releaseDate, long duration) {
         if (name == null || name.isBlank()) {
