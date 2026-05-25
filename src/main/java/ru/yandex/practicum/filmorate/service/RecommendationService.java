@@ -62,7 +62,7 @@ public class RecommendationService {
 
     protected Collection<UserDto> findUsersWithMaxLikeOverlap(Integer id) {
         Collection<Film> likedFilms = filmRepository.getLikedFilmsByUser(id);
-        if (likedFilms.isEmpty()) {
+        if (likedFilms == null || likedFilms.isEmpty()) {
             log.info("Для пользователя {} не найдено похожих пользователей", id);
             return Collections.emptyList();
         }
