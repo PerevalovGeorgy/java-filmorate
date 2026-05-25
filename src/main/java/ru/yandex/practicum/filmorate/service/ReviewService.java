@@ -54,11 +54,6 @@ public class ReviewService {
     }
 
     public Review update(Review review) {
-        Review existingReview = getReviewOrThrow(review.getReviewId());
-        review.setUserId(existingReview.getUserId());
-        review.setFilmId(existingReview.getFilmId());
-        review.setUseful(existingReview.getUseful());
-
         Review updatedReview = reviewRepository.update(review);
         feedService.logEvent(updatedReview.getUserId(), "REVIEW", "UPDATE", updatedReview.getReviewId());
 
