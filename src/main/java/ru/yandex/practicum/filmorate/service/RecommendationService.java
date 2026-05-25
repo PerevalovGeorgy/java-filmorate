@@ -49,6 +49,7 @@ public class RecommendationService {
     }
 
     public Collection<FilmDto> recommendedFilms(Integer userId) {
+        log.info("Вызван метод по рекомендации фильма по id={}", userId);
         if (!userRepository.existsById(userId)) {
             log.warn("Пользователь с id {} не найден", userId);
             return Collections.emptyList();
@@ -67,6 +68,7 @@ public class RecommendationService {
     }
 
     protected Collection<UserDto> findUsersWithMaxLikeOverlap(Integer id) {
+        log.info("Использован метод на получение максимально похожих пользователей по id={}", id);
         Collection<Film> likedFilms = filmRepository.getLikedFilmsByUser(id);
         if (likedFilms == null || likedFilms.isEmpty()) {
             log.info("Для пользователя {} не найдено похожих пользователей", id);

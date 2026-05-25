@@ -64,7 +64,7 @@ public class UserController {
     public ResponseEntity<Void> removeFriend(@PathVariable Integer id, @PathVariable Integer friendId) {
         log.info("DELETE-запрос: Пользователь id={} удаляет из друзей id={}", id, friendId);
         userService.removeFriend(id, friendId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}/friends")

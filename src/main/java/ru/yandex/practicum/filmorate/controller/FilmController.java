@@ -63,7 +63,7 @@ public class FilmController {
     public ResponseEntity<Void> deleteLike(@PathVariable("id") Integer filmId, @PathVariable("userId") Integer userId) {
         log.debug("DELETE-запрос: Пользователь {} удаляет лайк у фильма {}", userId, filmId);
         filmService.deleteLikeFilm(filmId, userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/popular")
