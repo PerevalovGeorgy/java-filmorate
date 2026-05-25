@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,14 +20,14 @@ public class MpaRatingController {
     private final MpaRatingService mpaRatingService;
 
     @GetMapping
-    public Collection<MpaRatingDto> findAll() {
+    public ResponseEntity<Collection<MpaRatingDto>> findAll() {
         log.info("GET-запрос на получение всех рейтингов MPA");
-        return mpaRatingService.findAll();
+        return ResponseEntity.ok(mpaRatingService.findAll());
     }
 
     @GetMapping("/{id}")
-    public MpaRatingDto findById(@PathVariable Integer id) {
+    public ResponseEntity<MpaRatingDto> findById(@PathVariable Integer id) {
         log.info("GET-запрос на получение рейтинга MPA с id={}", id);
-        return mpaRatingService.findById(id);
+        return ResponseEntity.ok(mpaRatingService.findById(id));
     }
 }
