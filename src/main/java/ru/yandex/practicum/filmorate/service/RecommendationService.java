@@ -19,15 +19,14 @@ import java.util.Comparator;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@Service
 @RequiredArgsConstructor
 @Slf4j
+@Service
 public class RecommendationService {
     private final FilmRepository filmRepository;
     private final UserRepository userRepository;
     private final FilmMapper filmMapper;
     private final UserMapper userMapper;
-
 
     protected Collection<FilmDto> getFilmsOnlyUserLikes(Integer user1Id, Integer user2Id) {
         Collection<Film> user1Films = filmRepository.getLikedFilmsByUser(user1Id);

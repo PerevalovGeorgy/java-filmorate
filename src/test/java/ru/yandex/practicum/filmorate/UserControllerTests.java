@@ -14,6 +14,7 @@ import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exception.ErrorHandler;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
+import ru.yandex.practicum.filmorate.service.RecommendationService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.time.LocalDate;
@@ -31,6 +32,9 @@ public class UserControllerTests {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockBean
+    private RecommendationService recommendationService;
 
     @Autowired
     private ObjectMapper objectMapper;
