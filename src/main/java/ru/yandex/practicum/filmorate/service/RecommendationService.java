@@ -30,6 +30,7 @@ public class RecommendationService {
         if (user1Films == null || user2Films == null) {
             return Collections.emptyList();
         }
+
         if (user1Films.isEmpty() || user2Films.isEmpty()) {
             if (user2Films.isEmpty() && !user1Films.isEmpty()) {
                 return user1Films.stream()
@@ -52,12 +53,17 @@ public class RecommendationService {
             log.warn("Пользователь с id {} не найден", userId);
             return Collections.emptyList();
         }
-        Optional<UserDto> mostSimilarUser = findUsersWithMaxLikeOverlap(userId).stream()
-                .findFirst();
-        if (mostSimilarUser.isEmpty()) {
+        Collection<UserDto> similarUsers = findUsersWithMaxLikeOverlap(userId);
+        if (similarUsers.isEmpty()) {
             return Collections.emptyList();
         }
-        return getFilmsOnlyUserLikes(userId, mostSimilarUser.get().getId());
+
+        Set<FilmDto> allRecommendations = new LinkedHashSet<>();
+        for (UserDto similarUser : similarUsers) {
+            allRecommendations.addAll(getFilmsOnlyUserLikes(similarUser.getId(), userId));
+        }
+
+        return new ArrayList<>(allRecommendations);
     }
 
     protected Collection<UserDto> findUsersWithMaxLikeOverlap(Integer id) {
@@ -72,6 +78,10 @@ public class RecommendationService {
 
         return userRepository.findAll().stream()
                 .filter(user1 -> !user1.getId().equals(id))
+                .filter(user -> {
+                    return filmRepository.getLikedFilmsByUser(user.getId()).stream()
+                            .anyMatch(likedFilms::contains);
+                })
                 .sorted(Comparator.comparing(
                         user1 -> filmRepository.getLikedFilmsByUser(user1.getId()).stream()
                                 .filter(likedFilms::contains)

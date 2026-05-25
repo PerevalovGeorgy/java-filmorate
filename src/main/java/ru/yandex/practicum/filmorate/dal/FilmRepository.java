@@ -85,8 +85,10 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Collection<Film> getLikedFilmsByUser(Integer userId) {
-        Collection<Film> likedFilms = findMany("SELECT f.* " +
+        Collection<Film> likedFilms = findMany( "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
+                "m.name AS mpa_name " +
                 "FROM films f " +
+                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
                 "JOIN film_likes fl ON f.id = fl.film_id " +
                 "WHERE fl.user_id = ? ", userId);
         loadGenresForFilms(likedFilms);
