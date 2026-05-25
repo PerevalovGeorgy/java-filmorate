@@ -68,6 +68,7 @@ public class RecommendationService {
         if (!userRepository.existsById(id)) {
             throw new NotFoundException("Пользователь с id " + id + " не найден");
         }
+
         return userRepository.findAll().stream()
                 .filter(user1 -> !user1.getId().equals(id))
                 .sorted(Comparator.comparing(
