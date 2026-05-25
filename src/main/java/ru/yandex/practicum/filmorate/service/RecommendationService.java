@@ -8,14 +8,12 @@ import ru.yandex.practicum.filmorate.dal.UserRepository;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.util.Collection;
-import java.util.Comparator;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -30,17 +28,32 @@ public class RecommendationService {
 
     protected Collection<FilmDto> getFilmsOnlyUserLikes(Integer user1Id, Integer user2Id) {
         Collection<Film> user1Films = filmRepository.getLikedFilmsByUser(user1Id);
-        Collection<Film> commonFilms = filmRepository.getLikedFilmsByUser(user2Id);
-        if (user1Films == null || commonFilms == null) {
-            throw new NotFoundException("Значение не может быть null");
+        Collection<Film> user2Films = filmRepository.getLikedFilmsByUser(user2Id);
+        if (user1Films == null || user2Films == null) {
+            return Collections.emptyList();
         }
+        if (user1Films.isEmpty() || user2Films.isEmpty()) {
+            if (user2Films.isEmpty() && !user1Films.isEmpty()) {
+                return user1Films.stream()
+                        .map(filmMapper::toDto)
+                        .collect(Collectors.toList());
+            }
+            return Collections.emptyList();
+        }
+
+        Set<Film> user2Set = new HashSet<>(user2Films);
+
         return user1Films.stream()
-                .filter(Predicate.not(commonFilms::contains))
+                .filter(Predicate.not(user2Set::contains))
                 .map(filmMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     public Collection<FilmDto> recommendedFilms(Integer userId) {
+        if (!userRepository.existsById(userId)) {
+            log.warn("Пользователь с id {} не найден", userId);
+            return Collections.emptyList();
+        }
         UserDto mostSimilarUser = findUsersWithMaxLikeOverlap(userId).stream()
                 .findFirst().orElseThrow(() -> new NotFoundException("Пользователь не найден"));
         return getFilmsOnlyUserLikes(userId, mostSimilarUser.getId());
@@ -49,9 +62,12 @@ public class RecommendationService {
     protected Collection<UserDto> findUsersWithMaxLikeOverlap(Integer id) {
         Collection<Film> likedFilms = filmRepository.getLikedFilmsByUser(id);
         if (likedFilms.isEmpty()) {
-            throw new ValidationException("у пользователя с id - " + id + " нет понравившихся фильмов");
+            log.info("Для пользователя {} не найдено похожих пользователей", id);
+            return Collections.emptyList();
         }
-        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+        if (!userRepository.existsById(id)) {
+            throw new NotFoundException("Пользователь с id " + id + " не найден");
+        }
         return userRepository.findAll().stream()
                 .filter(user1 -> !user1.getId().equals(id))
                 .sorted(Comparator.comparing(
