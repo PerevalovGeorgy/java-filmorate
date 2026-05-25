@@ -85,7 +85,10 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Collection<Film> getLikedFilmsByUser(Integer userId) {
-        return findMany("SELECT film_id FROM film_likes WHERE user_id = ?", userId);
+        return findMany("SELECT f.* " +
+                "FROM films AS f " +
+                "JOIN film_likes AS fl ON f.id = fl.film_id " +
+                "WHERE fl.user_id = ? ", userId);
     }
 
     public void removeLike(Integer filmId, Integer userId) {
