@@ -68,7 +68,7 @@ public class RecommendationService {
             return Collections.emptyList();
         }
         if (!userRepository.existsById(id)) {
-            throw new NotFoundException("Пользователь с id " + id + " не найден");
+            return Collections.emptyList();
         }
 
         return userRepository.findAll().stream()
