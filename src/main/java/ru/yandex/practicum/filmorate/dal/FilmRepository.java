@@ -86,8 +86,8 @@ public class FilmRepository extends BaseRepository<Film> {
 
     public Collection<Film> getLikedFilmsByUser(Integer userId) {
         Collection<Film> likedFilms = findMany("SELECT f.* " +
-                "FROM films AS f " +
-                "JOIN film_likes AS fl ON f.id = fl.film_id " +
+                "FROM films f " +
+                "JOIN film_likes fl ON f.id = fl.film_id " +
                 "WHERE fl.user_id = ? ", userId);
         loadGenresForFilms(likedFilms);
         loadDirectorForFilms(likedFilms);
