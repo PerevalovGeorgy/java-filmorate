@@ -53,9 +53,12 @@ public class RecommendationService {
             log.warn("Пользователь с id {} не найден", userId);
             return Collections.emptyList();
         }
-        UserDto mostSimilarUser = findUsersWithMaxLikeOverlap(userId).stream()
-                .findFirst().orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-        return getFilmsOnlyUserLikes(userId, mostSimilarUser.getId());
+        Optional<UserDto> mostSimilarUser = findUsersWithMaxLikeOverlap(userId).stream()
+                .findFirst();
+        if (mostSimilarUser.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return getFilmsOnlyUserLikes(userId, mostSimilarUser.get().getId());
     }
 
     protected Collection<UserDto> findUsersWithMaxLikeOverlap(Integer id) {
