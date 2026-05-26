@@ -255,6 +255,7 @@ public class FilmRepository extends BaseRepository<Film> {
             return directors;
         }, filmId);
     }
+
     private void loadGenresForFilms(Collection<Film> films) {
         if (films.isEmpty()) return;
         String sql = "SELECT fg.film_id, fg.genre_id, g.name AS genre_name " +
