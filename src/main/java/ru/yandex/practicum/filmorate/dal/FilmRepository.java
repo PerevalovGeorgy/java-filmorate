@@ -80,8 +80,26 @@ public class FilmRepository extends BaseRepository<Film> {
         return count != null && count > 0;
     }
 
-    public void addLike(Integer filmId, Integer userId) {
+    public boolean addLike(Integer filmId, Integer userId) {
+        String checkSql = "SELECT COUNT(*) FROM film_likes WHERE film_id = ? AND user_id = ?";
+        Integer count = jdbc.queryForObject(checkSql, Integer.class, filmId, userId);
+        if (count > 0) {
+            return false;
+        }
         update("INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)", filmId, userId);
+        return true;
+    }
+
+    public Collection<Film> getLikedFilmsByUser(Integer userId) {
+        Collection<Film> likedFilms = findMany("SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
+                "m.name AS mpa_name " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
+                "JOIN film_likes fl ON f.id = fl.film_id " +
+                "WHERE fl.user_id = ? ", userId);
+        loadGenresForFilms(likedFilms);
+        loadDirectorForFilms(likedFilms);
+        return likedFilms;
     }
 
     public void removeLike(Integer filmId, Integer userId) {
@@ -130,6 +148,56 @@ public class FilmRepository extends BaseRepository<Film> {
         loadGenresForFilms(films);
         loadDirectorForFilms(films);
         return films;
+    }
+
+    public Collection<Film> getPopularFilmsByGenreAndYear(Integer count, Integer genreId, Integer year) {
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
+                "m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
+                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
+                "JOIN film_genres fg ON f.id = fg.film_id " +
+                "WHERE fg.genre_id = ? AND EXTRACT(YEAR FROM f.release_date) = ? " +
+                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, m.name " +
+                "ORDER BY likes_count DESC LIMIT ?";
+
+        Collection<Film> popular = findMany(sql, genreId, year, count);
+
+        loadGenresForFilms(popular);
+        loadDirectorForFilms(popular);
+
+        return popular;
+    }
+
+    public Collection<Film> getPopularFilmsByYear(Integer count, Integer year) {
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
+                "m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
+                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
+                "WHERE EXTRACT(YEAR FROM f.release_date) = ? " +
+                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, m.name " +
+                "ORDER BY likes_count DESC LIMIT ?";
+        Collection<Film> popular = findMany(sql, year, count);
+        loadGenresForFilms(popular);
+        loadDirectorForFilms(popular);
+        return popular;
+    }
+
+    public Collection<Film> getPopularFilmsByGenre(Integer count, Integer genreId) {
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
+                "m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
+                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
+                "JOIN film_genres fg ON f.id = fg.film_id " +
+                "WHERE fg.genre_id = ? " +
+                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, m.name " +
+                "ORDER BY likes_count DESC LIMIT ?";
+        Collection<Film> popular = findMany(sql, genreId, count);
+        loadGenresForFilms(popular);
+        loadDirectorForFilms(popular);
+        return popular;
     }
 
     private void saveGenres(Film film) {
@@ -237,4 +305,64 @@ public class FilmRepository extends BaseRepository<Film> {
         });
         films.forEach(f -> f.setDirector(map.getOrDefault(f.getId(), new LinkedHashSet<>())));
     }
+
+    public Collection<Film> getCommonFilms(Integer userId, Integer friendId) {
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id," +
+                " mr.name as mpa_name " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings mr ON f.mpa_rating_id = mr.id " +
+                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
+                "WHERE f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?) " +
+                "  AND f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?) " +
+                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id " +
+                "ORDER BY COUNT(fl.user_id) DESC";
+        Collection<Film> films = findMany(sql, userId, friendId);
+        loadGenresForFilms(films);
+        loadDirectorForFilms(films);
+        return films;
+    }
+
+
+    public Collection<Film> searchFilms(String query, String by) {
+        boolean byTitle = by.contains("title");
+        boolean byDirector = by.contains("director");
+
+        String searchPattern = "%" + query + "%";
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, ")
+                .append("m.name AS mpa_name, COUNT(DISTINCT fl.user_id) AS likes_count ")
+                .append("FROM films f ")
+                .append("LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id ")
+                .append("LEFT JOIN film_likes fl ON f.id = fl.film_id ")
+                .append("LEFT JOIN film_directors fd ON f.id = fd.film_id ")
+                .append("LEFT JOIN directors d ON fd.director_id = d.id ");
+
+        List<Object> params = new ArrayList<>();
+
+        if (byTitle && byDirector) {
+            sql.append("WHERE LOWER(f.name) LIKE LOWER(?) OR LOWER(d.name) LIKE LOWER(?) ");
+            params.add(searchPattern);
+            params.add(searchPattern);
+        } else if (byTitle) {
+            sql.append("WHERE LOWER(f.name) LIKE LOWER(?) ");
+            params.add(searchPattern);
+        } else if (byDirector) {
+            sql.append("WHERE LOWER(d.name) LIKE LOWER(?) ");
+            params.add(searchPattern);
+        } else {
+            throw new IllegalArgumentException("Некорректный параметр поиска 'by': " + by);
+        }
+
+        sql.append("GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, m.name ")
+                .append("ORDER BY likes_count DESC");
+
+        Collection<Film> searched = findMany(sql.toString(), params.toArray());
+
+        loadGenresForFilms(searched);
+        loadDirectorForFilms(searched);
+
+        return searched;
+    }
+
 }

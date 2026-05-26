@@ -3,10 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.dal.FilmRepository;
-import ru.yandex.practicum.filmorate.dal.DirectorRepository;
-import ru.yandex.practicum.filmorate.dal.GenreRepository;
-import ru.yandex.practicum.filmorate.dal.MpaRepository;
+import ru.yandex.practicum.filmorate.dal.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.NewFilmDto;
 import ru.yandex.practicum.filmorate.dto.UpdateFilmDto;
@@ -25,11 +22,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FilmService {
     private final FilmRepository filmRepository;
+    private final UserRepository userRepository;
     private final DirectorRepository directorRepository;
     private final UserService userService;
     private final FilmMapper filmMapper;
     private final MpaRepository mpaRepository;
     private final GenreRepository genreRepository;
+    private final FeedService feedService;
 
     private static final LocalDate MINDATE = LocalDate.of(1895, 12, 28);
 
@@ -128,7 +127,13 @@ public class FilmService {
             throw new MoviePresenceInListException("Такого фильма нет в списке фильмов");
         }
         userService.findById(userId);
-        filmRepository.addLike(filmId, userId);
+        boolean isLiked = filmRepository.addLike(filmId, userId);
+        if (isLiked) {
+            log.debug("Пользователь {} добавил лайк для фильма {}", userId, filmId);
+        } else {
+            log.debug("Пользователь {} уже ставил лайк фильму {}, лайк не добавлен", userId, filmId);
+        }
+        feedService.logEvent(userId, "LIKE", "ADD", filmId);
     }
 
     public void deleteLikeFilm(Integer filmId, Integer userId) {
@@ -138,11 +143,25 @@ public class FilmService {
         }
         userService.findById(userId);
         filmRepository.removeLike(filmId, userId);
+        feedService.logEvent(userId, "LIKE", "REMOVE", filmId);
     }
 
     public Collection<FilmDto> getFilmsByLikes(Integer count) {
         log.info("Запрос на получение популярных фильмов, лимит: {}", count);
         return filmRepository.getPopularFilms(count).stream()
+                .map(filmMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public Collection<FilmDto> getCommonFilmsOrderByLikes(Integer userId, Integer friendId) {
+        log.info("Запрос на получение общих фильмов двух пользователей, user1 c id = {} и user2 c id = {}", userId, friendId);
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException("Пользователь с id = " + userId + " не найден");
+        }
+        if (!userRepository.existsById(friendId)) {
+            throw new NotFoundException("Пользователь (друг) с id = " + friendId + " не найден");
+        }
+        return filmRepository.getCommonFilms(userId, friendId).stream()
                 .map(filmMapper::toDto)
                 .collect(Collectors.toList());
     }
@@ -153,6 +172,64 @@ public class FilmService {
             throw new NotFoundException("Режиссер с id " + directorId + " не найден");
         }
         return filmRepository.getFilmsByDirectorId(directorId, sortBy).stream()
+                .map(filmMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public Collection<FilmDto> getPopularFilmsByGenreAndYear(Integer count, Integer genreId, Integer year) {
+        log.info("Запрос на получение популярных фильмов по жанру с id={} за год={}, лимит: {}", genreId, year, count);
+
+        if (year != null) {
+            int minYear = MINDATE.getYear();
+            int currentYear = LocalDate.now().getYear();
+            if (year < minYear || year > currentYear) {
+                log.warn("Валидация не пройдена: указанный год {} вне допустимого диапазона [{}-{}]", year, minYear,
+                        currentYear);
+                throw new ValidationException("Год должен быть не раньше " + minYear + " и не в будущем (текущий год: "
+                        + currentYear + ")");
+            }
+        }
+
+        if (genreId != null) {
+            if (!genreRepository.existsById(genreId)) {
+                log.warn("Валидация не пройдена: жанр с id={} не найден", genreId);
+                throw new NotFoundException("Жанр с id " + genreId + " не найден");
+            }
+        }
+
+        Collection<Film> films;
+        if (genreId != null && year != null) {
+            films = filmRepository.getPopularFilmsByGenreAndYear(count, genreId, year);
+        } else if (genreId != null) {
+            films = filmRepository.getPopularFilmsByGenre(count, genreId);
+        } else if (year != null) {
+            films = filmRepository.getPopularFilmsByYear(count, year);
+        } else {
+            films = filmRepository.getPopularFilms(count);
+        }
+
+        return films.stream()
+                .map(filmMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public Collection<FilmDto> searchFilms(String query, String by) {
+        log.info("Запрос на поиск фильмов по строке: '{}', параметры поиска: '{}'", query, by);
+
+        if (query == null || query.isBlank()) {
+            throw new ValidationException("Поисковый запрос не может быть пустым");
+        }
+        if (by == null || by.isBlank()) {
+            throw new ValidationException("Параметр поиска 'by' обязателен");
+        }
+
+        boolean hasTitle = by.contains("title");
+        boolean hasDirector = by.contains("director");
+        if (!hasTitle && !hasDirector) {
+            throw new ValidationException("Параметр 'by' должен содержать 'title', 'director' или оба значения");
+        }
+
+        return filmRepository.searchFilms(query, by).stream()
                 .map(filmMapper::toDto)
                 .collect(Collectors.toList());
     }
