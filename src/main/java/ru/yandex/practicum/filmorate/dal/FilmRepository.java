@@ -244,18 +244,17 @@ public class FilmRepository extends BaseRepository<Film> {
                 "JOIN directors d ON fd.director_id = d.id " +
                 "WHERE fd.film_id = ?";
 
-        LinkedHashSet<Director> directors = new LinkedHashSet<>();
-        jdbc.query(sql, rs -> {
+        return jdbc.query(sql, rs -> {
+            LinkedHashSet<Director> directors = new LinkedHashSet<>();
             while (rs.next()) {
                 directors.add(Director.builder()
                         .id(rs.getInt("director_id"))
                         .name(rs.getString("director_name"))
                         .build());
             }
+            return directors;
         }, filmId);
-        return directors;
     }
-
     private void loadGenresForFilms(Collection<Film> films) {
         if (films.isEmpty()) return;
         String sql = "SELECT fg.film_id, fg.genre_id, g.name AS genre_name " +
