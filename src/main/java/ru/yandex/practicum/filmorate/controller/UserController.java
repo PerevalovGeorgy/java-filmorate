@@ -54,7 +54,7 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Integer id) {
         log.info("DELETE-запрос: удаление пользователя id={}", id);
         userService.deleteUser(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}/friends/{friendId}")
