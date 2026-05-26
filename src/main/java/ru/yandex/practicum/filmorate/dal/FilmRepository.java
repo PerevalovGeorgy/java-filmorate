@@ -305,7 +305,7 @@ public class FilmRepository extends BaseRepository<Film> {
         });
         for (Film film : films) {
             LinkedHashSet<Director> directors = directorsByFilm.getOrDefault(film.getId(), new LinkedHashSet<>());
-            film.setDirector( directors);
+            film.setDirector(directors);
         }
     }
 
