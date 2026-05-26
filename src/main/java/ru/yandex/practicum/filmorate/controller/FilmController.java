@@ -98,4 +98,12 @@ public class FilmController {
         log.debug("GET-запрос на получение общих фильмов двух пользователей с id={}, id={}", userId, friendId);
         return ResponseEntity.ok(filmService.getCommonFilmsOrderByLikes(userId, friendId));
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<Collection<FilmDto>> searchFilms(
+            @RequestParam String query,
+            @RequestParam String by) {
+        log.debug("GET-запрос на поиск фильмов: query={}, by={}", query, by);
+        return ResponseEntity.ok(filmService.searchFilms(query, by));
+    }
 }
