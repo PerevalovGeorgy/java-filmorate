@@ -27,17 +27,14 @@ public class RecommendationService {
     protected Collection<FilmDto> getFilmsOnlyUserLikes(Integer user1Id, Integer user2Id) {
         Collection<Film> user1Films = filmRepository.getLikedFilmsByUser(user1Id);
         Collection<Film> user2Films = filmRepository.getLikedFilmsByUser(user2Id);
-        if (user1Films == null || user2Films == null) {
+        if (user1Films == null || user1Films.isEmpty()) {
             return Collections.emptyList();
         }
 
-        if (user1Films.isEmpty() || user2Films.isEmpty()) {
-            if (user2Films.isEmpty() && !user1Films.isEmpty()) {
-                return user1Films.stream()
-                        .map(filmMapper::toDto)
-                        .collect(Collectors.toList());
-            }
-            return Collections.emptyList();
+        if (user2Films == null || user2Films.isEmpty()) {
+            return user1Films.stream()
+                    .map(filmMapper::toDto)
+                    .collect(Collectors.toList());
         }
 
         Set<Film> user2Set = new HashSet<>(user2Films);
@@ -69,14 +66,15 @@ public class RecommendationService {
 
     protected Collection<UserDto> findUsersWithMaxLikeOverlap(Integer id) {
         log.info("Использован метод на получение максимально похожих пользователей по id={}", id);
+        if (!userRepository.existsById(id)) {
+            return Collections.emptyList();
+        }
         Collection<Film> likedFilms = filmRepository.getLikedFilmsByUser(id);
         if (likedFilms == null || likedFilms.isEmpty()) {
             log.info("Для пользователя {} не найдено похожих пользователей", id);
             return Collections.emptyList();
         }
-        if (!userRepository.existsById(id)) {
-            return Collections.emptyList();
-        }
+
 
         return userRepository.findAll().stream()
                 .filter(user1 -> !user1.getId().equals(id))
