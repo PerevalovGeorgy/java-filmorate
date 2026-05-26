@@ -37,7 +37,7 @@ public class ErrorHandler {
         log.error("Ошибка валидации DTO: {}", errors);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse("Ошибка валидации параметров запроса", errors));
+                .body(new ErrorResponse("Ошибка валидации", errors));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -95,5 +95,20 @@ public class ErrorHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse("Внутренняя ошибка сервера", e.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateReviewException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateReview(DuplicateReviewException e) {
+        log.error("Конфликт при создании отзыва: {}", e.getMessage());
+
+        if (e.getMessage().contains("уже оставил отзыв")) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("Ошибка создания отзыва", e.getMessage()));
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse("Ошибка создания отзыва", e.getMessage()));
     }
 }

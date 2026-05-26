@@ -84,4 +84,10 @@ public class UserController {
         log.info("GET-запрос на получение рекомендаций для пользователя id={}", id);
         return ResponseEntity.ok(recommendationService.recommendedFilms(id));
     }
+
+    @GetMapping("/{id}/feed")
+    public Collection<Feed> getFeed(@PathVariable Integer id) {
+        log.info("GET-запрос на получение ленты новостей пользователя id={}", id);
+        return feedService.getFeed(id);
+    }
 }

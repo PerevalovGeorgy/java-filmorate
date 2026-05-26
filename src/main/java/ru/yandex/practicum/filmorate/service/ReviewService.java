@@ -1,12 +1,14 @@
 package ru.yandex.practicum.filmorate.service;
 
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dal.FilmRepository;
 import ru.yandex.practicum.filmorate.dal.ReviewRepository;
 import ru.yandex.practicum.filmorate.dal.UserRepository;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.model.User;
@@ -15,22 +17,13 @@ import java.util.Collection;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final FilmRepository filmRepository;
     private final UserRepository userRepository;
-
-    public ReviewService(
-            ReviewRepository reviewRepository,
-            FilmRepository filmRepository,
-            UserRepository userRepository
-    ) {
-
-        this.reviewRepository = reviewRepository;
-        this.filmRepository = filmRepository;
-        this.userRepository = userRepository;
-    }
+    private final FeedService feedService;
 
     private Review getReviewOrThrow(Integer reviewId) {
         return reviewRepository.findById(reviewId)
@@ -50,8 +43,10 @@ public class ReviewService {
     public Review create(Review review) {
         getUserOrThrow(review.getUserId());
         getFilmOrThrow(review.getFilmId());
+        Review createdReview = reviewRepository.create(review);
 
-        return reviewRepository.create(review);
+        feedService.logEvent(createdReview.getUserId(), "REVIEW", "ADD", createdReview.getReviewId());
+        return createdReview;
     }
 
     public Review findById(Integer id) {
@@ -59,14 +54,16 @@ public class ReviewService {
     }
 
     public Review update(Review review) {
-        getReviewOrThrow(review.getReviewId());
+        Review updatedReview = reviewRepository.update(review);
+        feedService.logEvent(updatedReview.getUserId(), "REVIEW", "UPDATE", updatedReview.getReviewId());
 
-        return reviewRepository.update(review);
+        return updatedReview;
     }
 
     public void delete(Integer id) {
-        getReviewOrThrow(id);
+        Review review = getReviewOrThrow(id);
         reviewRepository.delete(id);
+        feedService.logEvent(review.getUserId(), "REVIEW", "REMOVE", review.getReviewId());
     }
 
     public Collection<Review> findReviews(Integer filmId, Integer count) {
@@ -77,26 +74,40 @@ public class ReviewService {
     }
 
     public void addLike(Integer id, Integer userId) {
-        getReviewOrThrow(id);
+        Review review = getReviewOrThrow(id);
         getUserOrThrow(userId);
+
+        if (reviewRepository.hasUserLikedReview(id, userId)) {
+            throw new ValidationException("Пользователь уже поставил лайк этому отзыву");
+        }
         reviewRepository.addLikeReview(id, userId);
     }
 
     public void deleteLike(Integer id, Integer userId) {
         getReviewOrThrow(id);
         getUserOrThrow(userId);
+        if (!reviewRepository.hasUserLikedReview(id, userId)) {
+            throw new ValidationException("Пользователь не ставил лайк этому отзыву");
+        }
         reviewRepository.deleteLikeReview(id, userId);
     }
 
     public void addDislike(Integer id, Integer userId) {
-        getReviewOrThrow(id);
+        Review review = getReviewOrThrow(id);
         getUserOrThrow(userId);
+
+        if (reviewRepository.hasUserDislikedReview(id, userId)) {
+            throw new ValidationException("Пользователь уже поставил дизлайк этому отзыву");
+        }
         reviewRepository.addDislikeReview(id, userId);
     }
 
     public void deleteDislike(Integer id, Integer userId) {
         getReviewOrThrow(id);
         getUserOrThrow(userId);
+        if (!reviewRepository.hasUserDislikedReview(id, userId)) {
+            throw new ValidationException("Пользователь не ставил дизлайк этому отзыву");
+        }
         reviewRepository.deleteDislikeReview(id, userId);
     }
 }

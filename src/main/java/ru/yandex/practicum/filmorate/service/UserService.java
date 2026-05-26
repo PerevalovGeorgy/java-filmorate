@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final FeedService feedService;
 
     public Collection<UserDto> findAll() {
         log.info("Запрос на получение списка всех пользователей");
@@ -65,6 +66,7 @@ public class UserService {
         checkUserExists(userId);
         checkUserExists(friendId);
         userRepository.addFriend(userId, friendId);
+        feedService.logEvent(userId, "FRIEND", "ADD", friendId);
     }
 
     public void removeFriend(Integer userId, Integer friendId) {
@@ -72,6 +74,7 @@ public class UserService {
         checkUserExists(userId);
         checkUserExists(friendId);
         userRepository.removeFriend(userId, friendId);
+        feedService.logEvent(userId, "FRIEND", "REMOVE", friendId);
     }
 
     public void confirmFriendship(Integer userId, Integer friendId) {
@@ -79,6 +82,7 @@ public class UserService {
         checkUserExists(userId);
         checkUserExists(friendId);
         userRepository.confirmFriendship(userId, friendId);
+        feedService.logEvent(userId, "FRIEND", "UPDATE", friendId);
     }
 
     public Collection<UserDto> getFriends(Integer userId) {
@@ -98,7 +102,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    private void checkUserExists(Integer id) {
+    public void checkUserExists(Integer id) {
         if (!userRepository.existsById(id)) {
             log.warn("Пользователь с id={} не существует", id);
             throw new NotFoundException("Пользователь с id " + id + " не найден");

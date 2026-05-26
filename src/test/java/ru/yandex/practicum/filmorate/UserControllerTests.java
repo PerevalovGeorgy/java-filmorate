@@ -42,7 +42,11 @@ public class UserControllerTests {
     @MockBean
     private UserService userService;
 
+    @MockBean
+    private FeedService feedService;
+
     private UserDto validUserDto;
+    private Feed validFeed;
 
     @BeforeEach
     void setUp() {
@@ -52,6 +56,15 @@ public class UserControllerTests {
                 .login("userLogin")
                 .name("User Name")
                 .birthday(LocalDate.of(2000, 1, 1))
+                .build();
+
+        validFeed = Feed.builder()
+                .eventId(1)
+                .timestamp(System.currentTimeMillis())
+                .userId(1)
+                .eventType("FRIEND")
+                .operation("ADD")
+                .entityId(2)
                 .build();
     }
 
@@ -109,7 +122,7 @@ public class UserControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidUserDto)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Ошибка валидации параметров запроса"));
+                .andExpect(jsonPath("$.error").value("Ошибка валидации"));
     }
 
     @Test
@@ -161,7 +174,17 @@ public class UserControllerTests {
     }
 
     @Test
-    void testAddFriendOneWay() throws Exception {
+    void testDeleteUser() throws Exception {
+        Mockito.doNothing().when(userService).deleteUser(1);
+
+        mockMvc.perform(delete("/users/1"))
+                .andExpect(status().isOk());
+
+        Mockito.verify(userService, Mockito.times(1)).deleteUser(1);
+    }
+
+    @Test
+    void testAddFriend() throws Exception {
         Mockito.doNothing().when(userService).addFriend(1, 2);
 
         mockMvc.perform(put("/users/1/friends/2"))
@@ -200,5 +223,27 @@ public class UserControllerTests {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].id").value(1));
+    }
+
+    @Test
+    void testGetFeed() throws Exception {
+        Mockito.when(feedService.getFeed(1)).thenReturn(List.of(validFeed));
+
+        mockMvc.perform(get("/users/1/feed"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$[0].eventId").value(1))
+                .andExpect(jsonPath("$[0].userId").value(1))
+                .andExpect(jsonPath("$[0].eventType").value("FRIEND"))
+                .andExpect(jsonPath("$[0].operation").value("ADD"));
+    }
+
+    @Test
+    void testGetFeedUserNotFound() throws Exception {
+        Mockito.when(feedService.getFeed(999)).thenThrow(new ru.yandex.practicum.filmorate.exception.NotFoundException("Пользователь с id 999 не найден"));
+
+        mockMvc.perform(get("/users/999/feed"))
+                .andExpect(status().isNotFound());
     }
 }

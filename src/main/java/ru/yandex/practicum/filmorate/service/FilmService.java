@@ -27,6 +27,7 @@ public class FilmService {
     private final FilmMapper filmMapper;
     private final MpaRepository mpaRepository;
     private final GenreRepository genreRepository;
+    private final FeedService feedService;
 
     private static final LocalDate MINDATE = LocalDate.of(1895, 12, 28);
 
@@ -135,6 +136,7 @@ public class FilmService {
         }
         userRepository.findById(userId);
         filmRepository.removeLike(filmId, userId);
+        feedService.logEvent(userId, "LIKE", "REMOVE", filmId);
     }
 
     public Collection<FilmDto> getFilmsByLikes(Integer count) {
@@ -200,6 +202,27 @@ public class FilmService {
         }
 
         return films.stream()
+                .map(filmMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public Collection<FilmDto> searchFilms(String query, String by) {
+        log.info("Запрос на поиск фильмов по строке: '{}', параметры поиска: '{}'", query, by);
+
+        if (query == null || query.isBlank()) {
+            throw new ValidationException("Поисковый запрос не может быть пустым");
+        }
+        if (by == null || by.isBlank()) {
+            throw new ValidationException("Параметр поиска 'by' обязателен");
+        }
+
+        boolean hasTitle = by.contains("title");
+        boolean hasDirector = by.contains("director");
+        if (!hasTitle && !hasDirector) {
+            throw new ValidationException("Параметр 'by' должен содержать 'title', 'director' или оба значения");
+        }
+
+        return filmRepository.searchFilms(query, by).stream()
                 .map(filmMapper::toDto)
                 .collect(Collectors.toList());
     }
