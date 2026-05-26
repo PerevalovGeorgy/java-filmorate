@@ -8,8 +8,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.service.FeedService;
 import ru.yandex.practicum.filmorate.service.RecommendationService;
 import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.model.*;
+
 
 import java.util.Collection;
 
@@ -20,6 +23,7 @@ import java.util.Collection;
 public class UserController {
     private final UserService userService;
     private final RecommendationService recommendationService;
+    private final FeedService feedService;
 
     @GetMapping
     public ResponseEntity<Collection<UserDto>> findAll() {
