@@ -24,6 +24,7 @@ public class FilmService {
     private final FilmRepository filmRepository;
     private final UserRepository userRepository;
     private final DirectorRepository directorRepository;
+    private final UserService userService;
     private final FilmMapper filmMapper;
     private final MpaRepository mpaRepository;
     private final GenreRepository genreRepository;
@@ -125,8 +126,14 @@ public class FilmService {
         if (!filmRepository.existsById(filmId)) {
             throw new MoviePresenceInListException("Такого фильма нет в списке фильмов");
         }
-        userRepository.findById(userId);
-        filmRepository.addLike(filmId, userId);
+        userService.findById(userId);
+        boolean isLiked = filmRepository.addLike(filmId, userId);
+        if (isLiked) {
+            log.debug("Пользователь {} добавил лайк для фильма {}", userId, filmId);
+        } else {
+            log.debug("Пользователь {} уже ставил лайк фильму {}, лайк не добавлен", userId, filmId);
+        }
+        feedService.logEvent(userId, "LIKE", "ADD", filmId);
     }
 
     public void deleteLikeFilm(Integer filmId, Integer userId) {
@@ -134,7 +141,7 @@ public class FilmService {
         if (!filmRepository.existsById(filmId)) {
             throw new MoviePresenceInListException("Такого фильма нет в списке фильмов");
         }
-        userRepository.findById(userId);
+        userService.findById(userId);
         filmRepository.removeLike(filmId, userId);
         feedService.logEvent(userId, "LIKE", "REMOVE", filmId);
     }
