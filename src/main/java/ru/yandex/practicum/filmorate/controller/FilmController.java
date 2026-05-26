@@ -106,5 +106,4 @@ public class FilmController {
         log.debug("GET-запрос на поиск фильмов: query={}, by={}", query, by);
         return ResponseEntity.ok(filmService.searchFilms(query, by));
     }
-
 }
