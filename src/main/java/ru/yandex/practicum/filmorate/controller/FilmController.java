@@ -88,4 +88,12 @@ public class FilmController {
         return filmService.getCommonFilmsOrderByLikes(userId, friendId);
     }
 
+    @GetMapping("/search")
+    public Collection<FilmDto> searchFilms(
+            @RequestParam String query,
+            @RequestParam String by) {
+        log.debug("GET-запрос на поиск фильмов. query={}, by={}", query, by);
+        return filmService.searchFilms(query, by);
+    }
+
 }

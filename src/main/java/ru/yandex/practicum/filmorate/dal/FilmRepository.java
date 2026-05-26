@@ -289,7 +289,7 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Collection<Film> getCommonFilms(Integer userId, Integer friendId) {
-        String sql =  "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id," +
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id," +
                 " mr.name as mpa_name " +
                 "FROM films f " +
                 "LEFT JOIN mpa_ratings mr ON f.mpa_rating_id = mr.id " +
@@ -302,6 +302,49 @@ public class FilmRepository extends BaseRepository<Film> {
         loadGenresForFilms(films);
         loadDirectorForFilms(films);
         return films;
+    }
+
+
+    public Collection<Film> searchFilms(String query, String by) {
+        boolean byTitle = by.contains("title");
+        boolean byDirector = by.contains("director");
+
+        String searchPattern = "%" + query + "%";
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, ")
+                .append("m.name AS mpa_name, COUNT(DISTINCT fl.user_id) AS likes_count ")
+                .append("FROM films f ")
+                .append("LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id ")
+                .append("LEFT JOIN film_likes fl ON f.id = fl.film_id ")
+                .append("LEFT JOIN film_directors fd ON f.id = fd.film_id ")
+                .append("LEFT JOIN directors d ON fd.director_id = d.id ");
+
+        List<Object> params = new ArrayList<>();
+
+        if (byTitle && byDirector) {
+            sql.append("WHERE LOWER(f.name) LIKE LOWER(?) OR LOWER(d.name) LIKE LOWER(?) ");
+            params.add(searchPattern);
+            params.add(searchPattern);
+        } else if (byTitle) {
+            sql.append("WHERE LOWER(f.name) LIKE LOWER(?) ");
+            params.add(searchPattern);
+        } else if (byDirector) {
+            sql.append("WHERE LOWER(d.name) LIKE LOWER(?) ");
+            params.add(searchPattern);
+        } else {
+            throw new IllegalArgumentException("Некорректный параметр поиска 'by': " + by);
+        }
+
+        sql.append("GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, m.name ")
+                .append("ORDER BY likes_count DESC");
+
+        Collection<Film> searched = findMany(sql.toString(), params.toArray());
+
+        loadGenresForFilms(searched);
+        loadDirectorForFilms(searched);
+
+        return searched;
     }
 
 }
