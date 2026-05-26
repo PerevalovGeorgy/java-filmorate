@@ -80,8 +80,14 @@ public class FilmRepository extends BaseRepository<Film> {
         return count != null && count > 0;
     }
 
-    public void addLike(Integer filmId, Integer userId) {
+    public boolean addLike(Integer filmId, Integer userId) {
+        String checkSql = "SELECT COUNT(*) FROM film_likes WHERE film_id = ? AND user_id = ?";
+        Integer count = jdbc.queryForObject(checkSql, Integer.class, filmId, userId);
+        if (count > 0) {
+            return false;
+        }
         update("INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)", filmId, userId);
+        return true;
     }
 
     public void removeLike(Integer filmId, Integer userId) {

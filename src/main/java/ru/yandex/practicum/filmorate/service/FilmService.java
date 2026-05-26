@@ -127,7 +127,12 @@ public class FilmService {
             throw new MoviePresenceInListException("Такого фильма нет в списке фильмов");
         }
         userService.findById(userId);
-        filmRepository.addLike(filmId, userId);
+        boolean isLiked = filmRepository.addLike(filmId, userId);
+        if (isLiked) {
+            log.debug("Пользователь {} добавил лайк для фильма {}", userId, filmId);
+        } else {
+            log.debug("Пользователь {} уже ставил лайк фильму {}, лайк не добавлен", userId, filmId);
+        }
         feedService.logEvent(userId, "LIKE", "ADD", filmId);
     }
 
