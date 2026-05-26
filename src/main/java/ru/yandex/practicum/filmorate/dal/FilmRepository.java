@@ -80,8 +80,26 @@ public class FilmRepository extends BaseRepository<Film> {
         return count != null && count > 0;
     }
 
-    public void addLike(Integer filmId, Integer userId) {
+    public boolean addLike(Integer filmId, Integer userId) {
+        String checkSql = "SELECT COUNT(*) FROM film_likes WHERE film_id = ? AND user_id = ?";
+        Integer count = jdbc.queryForObject(checkSql, Integer.class, filmId, userId);
+        if (count > 0) {
+            return false;
+        }
         update("INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)", filmId, userId);
+        return true;
+    }
+
+    public Collection<Film> getLikedFilmsByUser(Integer userId) {
+        Collection<Film> likedFilms = findMany("SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
+                "m.name AS mpa_name " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
+                "JOIN film_likes fl ON f.id = fl.film_id " +
+                "WHERE fl.user_id = ? ", userId);
+        loadGenresForFilms(likedFilms);
+        loadDirectorForFilms(likedFilms);
+        return likedFilms;
     }
 
     public void removeLike(Integer filmId, Integer userId) {

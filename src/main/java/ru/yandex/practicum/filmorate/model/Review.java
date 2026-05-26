@@ -24,6 +24,5 @@ public class Review {
     @NotNull(message = "Идентификатор фильма должен быть указан")
     private Integer filmId;
 
-    @Builder.Default
-    private int useful = 0;
+    private Integer useful = 0;
 }

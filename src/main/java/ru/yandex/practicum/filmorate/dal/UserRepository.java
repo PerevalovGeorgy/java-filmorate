@@ -72,4 +72,5 @@ public class UserRepository extends BaseRepository<User> {
                 "WHERE user_id = ? AND friend_id = ?";
         jdbc.update(sql, userId, friendId);
     }
+
 }

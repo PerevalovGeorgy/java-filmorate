@@ -6,6 +6,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mappers.ReviewRowMapper;
+import ru.yandex.practicum.filmorate.exception.DuplicateReviewException;
 import ru.yandex.practicum.filmorate.model.Review;
 
 import java.sql.PreparedStatement;
@@ -33,6 +34,12 @@ public class ReviewRepository extends BaseRepository<Review> {
     }
 
     public Review create(Review review) {
+        String checkSql = "SELECT COUNT(*) FROM reviews WHERE user_id = ? AND film_id = ?";
+        Integer count = jdbc.queryForObject(checkSql, Integer.class, review.getUserId(), review.getFilmId());
+
+        if (count > 0) {
+            throw new DuplicateReviewException("Пользователь уже оставил отзыв на этот фильм");
+        }
 
         String sqlQuery = "INSERT INTO reviews (content, is_positive, user_id, film_id) " +
                 "VALUES (?, ?, ?, ?)";
@@ -148,4 +155,23 @@ public class ReviewRepository extends BaseRepository<Review> {
             return Optional.empty();
         }
     }
+
+    public boolean hasUserLikedReview(Integer reviewId, Integer userId) {
+        String sql = "SELECT COUNT(*) FROM review_likes WHERE review_id = ? AND user_id = ? AND is_like = TRUE";
+        Integer count = jdbc.queryForObject(sql, Integer.class, reviewId, userId);
+        return count > 0;
+    }
+
+    public boolean hasUserDislikedReview(Integer reviewId, Integer userId) {
+        String sql = "SELECT COUNT(*) FROM review_likes WHERE review_id = ? AND user_id = ? AND is_like = FALSE";
+        Integer count = jdbc.queryForObject(sql, Integer.class, reviewId, userId);
+        return count > 0;
+    }
+
+    public boolean hasUserReviewedFilm(Integer userId, Integer filmId) {
+        String sql = "SELECT COUNT(*) FROM reviews WHERE user_id = ? AND film_id = ?";
+        Integer count = jdbc.queryForObject(sql, Integer.class, userId, filmId);
+        return count > 0;
+    }
+
 }

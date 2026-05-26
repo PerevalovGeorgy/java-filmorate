@@ -28,6 +28,7 @@ public class FilmService {
     private final FilmMapper filmMapper;
     private final MpaRepository mpaRepository;
     private final GenreRepository genreRepository;
+    private final FeedService feedService;
 
     private static final LocalDate MINDATE = LocalDate.of(1895, 12, 28);
 
@@ -126,7 +127,13 @@ public class FilmService {
             throw new MoviePresenceInListException("Такого фильма нет в списке фильмов");
         }
         userService.findById(userId);
-        filmRepository.addLike(filmId, userId);
+        boolean isLiked = filmRepository.addLike(filmId, userId);
+        if (isLiked) {
+            log.debug("Пользователь {} добавил лайк для фильма {}", userId, filmId);
+        } else {
+            log.debug("Пользователь {} уже ставил лайк фильму {}, лайк не добавлен", userId, filmId);
+        }
+        feedService.logEvent(userId, "LIKE", "ADD", filmId);
     }
 
     public void deleteLikeFilm(Integer filmId, Integer userId) {
@@ -136,6 +143,7 @@ public class FilmService {
         }
         userService.findById(userId);
         filmRepository.removeLike(filmId, userId);
+        feedService.logEvent(userId, "LIKE", "REMOVE", filmId);
     }
 
     public Collection<FilmDto> getFilmsByLikes(Integer count) {
