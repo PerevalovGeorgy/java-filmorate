@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dal.DirectorRepository;
 import ru.yandex.practicum.filmorate.dto.DirectorDto;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.mapper.DirectorMapper;
 import ru.yandex.practicum.filmorate.model.Director;
 
@@ -31,17 +32,20 @@ public class DirectorService {
     }
 
     public DirectorDto findById(Integer id) {
-        log.info("Запрос на получение пользователя с id={}", id);
+        log.info("Запрос на получение режиссер с id={}", id);
         return directorRepository.findById(id)
                 .map(directorMapper::toDto)
                 .orElseThrow(() -> {
-                    log.warn("Пользователь с id={} не найден", id);
+                    log.warn("Режиссер с id={} не найден", id);
                     return new NotFoundException("Пользователь с id " + id + " не найден");
                 });
     }
 
     public DirectorDto create(DirectorDto directorDto) {
         log.info("Запрос на создание режиссера с именем: {}", directorDto.getName());
+        if (directorDto.getName() == null || directorDto.getName().trim().isEmpty()) {
+            throw new ValidationException("Имя режиссера не может быть пустым");
+        }
         Director director = directorMapper.toModel(directorDto);
         Director createddirector = directorRepository.create(director);
         return directorMapper.toDto(createddirector);
@@ -49,6 +53,9 @@ public class DirectorService {
 
     public DirectorDto update(DirectorDto directorDto) {
         log.info("Запрос на обновление режиссера с id={}", directorDto.getId());
+        if (directorDto.getName() == null || directorDto.getName().trim().isEmpty()) {
+            throw new ValidationException("Имя режиссера не может быть пустым");
+        }
         if (directorDto.getId() == null || !directorRepository.existsById(directorDto.getId())) {
             log.warn("Попытка обновления несуществующего режиссера с id={}", directorDto.getId());
             throw new NotFoundException("Режиссер с id " + directorDto.getId() + " не найден");

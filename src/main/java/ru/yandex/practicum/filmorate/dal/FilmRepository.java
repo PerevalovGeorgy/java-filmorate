@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.model.Genre;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 public class FilmRepository extends BaseRepository<Film> {
@@ -26,10 +27,7 @@ public class FilmRepository extends BaseRepository<Film> {
                 "m.name AS mpa_name " +
                 "FROM films f " +
                 "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id";
-        Collection<Film> films = findMany(sql);
-        loadGenresForFilms(films);
-        loadDirectorForFilms(films);
-        return films;
+        return findManyWithDetails(sql);
     }
 
     public Optional<Film> findById(Integer id) {
@@ -38,12 +36,7 @@ public class FilmRepository extends BaseRepository<Film> {
                 "FROM films f " +
                 "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
                 "WHERE f.id = ?";
-        Optional<Film> filmOpt = findOne(sql, id);
-        filmOpt.ifPresent(film -> {
-            film.setGenres(getGenresByFilmId(id));
-            film.setDirector(getDirectorByFilmId(id));
-        });
-        return filmOpt;
+        return findOneWithDetails(sql, id);
     }
 
     public Film create(Film film) {
@@ -91,15 +84,13 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Collection<Film> getLikedFilmsByUser(Integer userId) {
-        Collection<Film> likedFilms = findMany("SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
                 "m.name AS mpa_name " +
                 "FROM films f " +
                 "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
                 "JOIN film_likes fl ON f.id = fl.film_id " +
-                "WHERE fl.user_id = ? ", userId);
-        loadGenresForFilms(likedFilms);
-        loadDirectorForFilms(likedFilms);
-        return likedFilms;
+                "WHERE fl.user_id = ? ";
+        return findManyWithDetails(sql, userId);
     }
 
     public void removeLike(Integer filmId, Integer userId) {
@@ -114,10 +105,7 @@ public class FilmRepository extends BaseRepository<Film> {
                 "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
                 "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, m.name " +
                 "ORDER BY likes_count DESC LIMIT ?";
-        Collection<Film> popular = findMany(sql, count);
-        loadGenresForFilms(popular);
-        loadDirectorForFilms(popular);
-        return popular;
+        return findManyWithDetails(sql, count);
     }
 
     public Collection<Film> getFilmsByDirectorId(Integer directorId, String sortBy) {
@@ -129,7 +117,7 @@ public class FilmRepository extends BaseRepository<Film> {
                     "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
                     "JOIN film_directors fd ON f.id = fd.film_id " +
                     "WHERE fd.director_id = ? " +
-                    "ORDER BY f.release_date ASC";
+                    "ORDER BY EXTRACT(YEAR FROM f.release_date) ASC";
         } else if ("likes".equalsIgnoreCase(sortBy)) {
             sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
                     "m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +
@@ -143,11 +131,7 @@ public class FilmRepository extends BaseRepository<Film> {
         } else {
             throw new IllegalArgumentException("Некорректный параметр сортировки: " + sortBy);
         }
-
-        Collection<Film> films = findMany(sql, directorId);
-        loadGenresForFilms(films);
-        loadDirectorForFilms(films);
-        return films;
+        return findManyWithDetails(sql, directorId);
     }
 
     public Collection<Film> getPopularFilmsByGenreAndYear(Integer count, Integer genreId, Integer year) {
@@ -259,16 +243,17 @@ public class FilmRepository extends BaseRepository<Film> {
                 "FROM film_directors fd " +
                 "JOIN directors d ON fd.director_id = d.id " +
                 "WHERE fd.film_id = ?";
-        return jdbc.query(sql, (rs) -> {
-            LinkedHashSet<Director> director = new LinkedHashSet<>();
+
+        LinkedHashSet<Director> directors = new LinkedHashSet<>();
+        jdbc.query(sql, rs -> {
             while (rs.next()) {
-                director.add(Director.builder()
+                directors.add(Director.builder()
                         .id(rs.getInt("director_id"))
                         .name(rs.getString("director_name"))
                         .build());
             }
-            return director;
         }, filmId);
+        return directors;
     }
 
     private void loadGenresForFilms(Collection<Film> films) {
@@ -290,36 +275,51 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     private void loadDirectorForFilms(Collection<Film> films) {
-        if (films.isEmpty()) return;
-        String sql = "SELECT fd.film_id, fd.director_id, d.name AS director_name " +
+        if (films == null || films.isEmpty()) {
+            return;
+        }
+        String filmIds = films.stream()
+                .map(Film::getId)
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+
+        if (filmIds.isEmpty()) {
+            return;
+        }
+
+        String sql = "SELECT fd.film_id, d.id, d.name " +
                 "FROM film_directors fd " +
-                "JOIN directors d ON fd.director_id = d.id";
-        Map<Integer, LinkedHashSet<Director>> map = new HashMap<>();
-        jdbc.query(sql, (rs) -> {
-            int fId = rs.getInt("film_id");
+                "JOIN directors d ON fd.director_id = d.id " +
+                "WHERE fd.film_id IN (" + filmIds + ")";
+
+        Map<Integer, LinkedHashSet<Director>> directorsByFilm = new HashMap<>();
+
+        jdbc.query(sql, rs -> {
+            Integer filmId = rs.getInt("film_id");
             Director director = Director.builder()
-                    .id(rs.getInt("director_id"))
-                    .name(rs.getString("director_name"))
+                    .id(rs.getInt("id"))
+                    .name(rs.getString("name"))
                     .build();
-            map.computeIfAbsent(fId, k -> new LinkedHashSet<>()).add(director);
+
+            directorsByFilm.computeIfAbsent(filmId, k -> new LinkedHashSet<>()).add(director);
         });
-        films.forEach(f -> f.setDirector(map.getOrDefault(f.getId(), new LinkedHashSet<>())));
+        for (Film film : films) {
+            LinkedHashSet<Director> directors = directorsByFilm.getOrDefault(film.getId(), new LinkedHashSet<>());
+            film.setDirector( directors);
+        }
     }
 
     public Collection<Film> getCommonFilms(Integer userId, Integer friendId) {
-        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id," +
-                " mr.name as mpa_name " +
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
+                "mr.name as mpa_name, COUNT(fl.user_id) AS likes_count " +
                 "FROM films f " +
                 "LEFT JOIN mpa_ratings mr ON f.mpa_rating_id = mr.id " +
                 "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
                 "WHERE f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?) " +
                 "  AND f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?) " +
-                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id " +
-                "ORDER BY COUNT(fl.user_id) DESC";
-        Collection<Film> films = findMany(sql, userId, friendId);
-        loadGenresForFilms(films);
-        loadDirectorForFilms(films);
-        return films;
+                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, mr.name " +
+                "ORDER BY likes_count DESC";
+        return findManyWithDetails(sql, userId, friendId);
     }
 
 
@@ -363,6 +363,23 @@ public class FilmRepository extends BaseRepository<Film> {
         loadDirectorForFilms(searched);
 
         return searched;
+    }
+
+    private Collection<Film> findManyWithDetails(String query, Object... params) {
+        Collection<Film> films = findMany(query, params);
+        loadGenresForFilms(films);
+        loadDirectorForFilms(films);
+        return films;
+    }
+
+    private Optional<Film> findOneWithDetails(String query, Object... params) {
+        Optional<Film> film = findOne(query, params);
+        if (film.isPresent()) {
+            Film f = film.get();
+            f.setGenres(getGenresByFilmId(f.getId()));
+            f.setDirector(getDirectorByFilmId(f.getId()));
+        }
+        return film;
     }
 
 }

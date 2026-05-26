@@ -99,10 +99,12 @@ public class FilmController {
         return ResponseEntity.ok(filmService.getCommonFilmsOrderByLikes(userId, friendId));
     }
 
-    @GetMapping("/director/{directorId}")
-    public Collection<FilmDto> getFilmsByDirector(@PathVariable Integer directorId, @RequestParam String sortBy) {
-        log.debug("\"GET-запрос на получение фильмов режиссера с id={}, sortBy={}", directorId, sortBy);
-        return filmService.getFilmsByDirectorId(directorId, sortBy);
+    @GetMapping("/search")
+    public ResponseEntity<Collection<FilmDto>> searchFilms(
+            @RequestParam String query,
+            @RequestParam String by) {
+        log.debug("GET-запрос на поиск фильмов: query={}, by={}", query, by);
+        return ResponseEntity.ok(filmService.searchFilms(query, by));
     }
 
 }
