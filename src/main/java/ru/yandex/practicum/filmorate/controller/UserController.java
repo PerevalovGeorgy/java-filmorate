@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.model.Feed;
+import ru.yandex.practicum.filmorate.service.FeedService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
@@ -16,6 +18,7 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final FeedService feedService;
 
     @GetMapping
     public Collection<UserDto> findAll() {
@@ -70,5 +73,11 @@ public class UserController {
     public Collection<UserDto> getCommonFriends(@PathVariable Integer id, @PathVariable @Valid Integer otherId) {
         log.info("GET-запрос на получение общих друзей пользователей id={} и id={}", id, otherId);
         return userService.getCommonFriends(id, otherId);
+    }
+
+    @GetMapping("/{id}/feed")
+    public Collection<Feed> getFeed(@PathVariable Integer id) {
+        log.info("GET-запрос на получение ленты новостей пользователя id={}", id);
+        return feedService.getFeed(id);
     }
 }
