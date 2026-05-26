@@ -82,6 +82,7 @@ public class RecommendationService {
                     return filmRepository.getLikedFilmsByUser(user.getId()).stream()
                             .anyMatch(likedFilms::contains);
                 })
+
                 .sorted(Comparator.comparing(
                         user1 -> filmRepository.getLikedFilmsByUser(user1.getId()).stream()
                                 .filter(likedFilms::contains)
