@@ -185,7 +185,9 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     private void saveGenres(Film film) {
-        if (film.getGenres() == null || film.getGenres().isEmpty()) return;
+        if (film.getGenres() == null || film.getGenres().isEmpty()) {
+            return;
+        }
         String sql = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
         List<Genre> genreList = new ArrayList<>(film.getGenres());
         jdbc.batchUpdate(sql, new BatchPreparedStatementSetter() {
@@ -203,7 +205,9 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     private void saveDirector(Film film) {
-        if (film.getDirector() == null || film.getDirector().isEmpty()) return;
+        if (film.getDirector() == null || film.getDirector().isEmpty()) {
+            return;
+        }
         String sql = "INSERT INTO film_directors (film_id, director_id) VALUES (?, ?)";
         List<Director> directorList = new ArrayList<>(film.getDirector());
         jdbc.batchUpdate(sql, new BatchPreparedStatementSetter() {
@@ -257,7 +261,9 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     private void loadGenresForFilms(Collection<Film> films) {
-        if (films.isEmpty()) return;
+        if (films.isEmpty()) {
+            return;
+        }
         String sql = "SELECT fg.film_id, fg.genre_id, g.name AS genre_name " +
                 "FROM film_genres fg " +
                 "JOIN genres g ON fg.genre_id = g.id " +

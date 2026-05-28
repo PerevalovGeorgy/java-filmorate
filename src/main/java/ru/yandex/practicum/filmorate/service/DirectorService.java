@@ -12,6 +12,8 @@ import ru.yandex.practicum.filmorate.mapper.DirectorMapper;
 import ru.yandex.practicum.filmorate.model.Director;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -21,8 +23,6 @@ import java.util.stream.Collectors;
 public class DirectorService {
     private final DirectorRepository directorRepository;
     private final DirectorMapper directorMapper;
-
-
 
     public Collection<DirectorDto> findAll() {
         log.info("Запрос на получение списка всех режиссеров");
@@ -43,9 +43,7 @@ public class DirectorService {
 
     public DirectorDto create(DirectorDto directorDto) {
         log.info("Запрос на создание режиссера с именем: {}", directorDto.getName());
-        if (directorDto.getName() == null || directorDto.getName().trim().isEmpty()) {
-            throw new ValidationException("Имя режиссера не может быть пустым");
-        }
+        validateDirectorName(directorDto);
         Director director = directorMapper.toModel(directorDto);
         Director createddirector = directorRepository.create(director);
         return directorMapper.toDto(createddirector);
@@ -53,13 +51,7 @@ public class DirectorService {
 
     public DirectorDto update(DirectorDto directorDto) {
         log.info("Запрос на обновление режиссера с id={}", directorDto.getId());
-        if (directorDto.getName() == null || directorDto.getName().trim().isEmpty()) {
-            throw new ValidationException("Имя режиссера не может быть пустым");
-        }
-        if (directorDto.getId() == null || !directorRepository.existsById(directorDto.getId())) {
-            log.warn("Попытка обновления несуществующего режиссера с id={}", directorDto.getId());
-            throw new NotFoundException("Режиссер с id " + directorDto.getId() + " не найден");
-        }
+        validationOnUpdateDirector(directorDto);
         Director director = directorMapper.toModel(directorDto);
         Director updatedDirector = directorRepository.update(director);
         return directorMapper.toDto(updatedDirector);
@@ -67,21 +59,56 @@ public class DirectorService {
 
     public DirectorDto delete(Integer directorId) {
         log.info("Запрос на удаление режиссера с id={}",  directorId);
-        if (!directorRepository.existsById(directorId)) {
-            log.warn("Попытка удалениея несуществующего режиссера с id={}",  directorId);
-            throw new NotFoundException("Режиссер с id " + directorId + " не найден");
-        }
+        validationOnDeletionDirector(directorId);
         DirectorDto deletedDirector = findById(directorId);
         directorRepository.deleteById(directorId);
 
         return deletedDirector;
     }
 
-
-    private void checkDirectorExists(Integer id) {
+    public void checkDirectorExists(Integer id) {
         if (!directorRepository.existsById(id)) {
             log.warn("Режиссер с id={} не существует", id);
             throw new NotFoundException("Режиссер с id " + id + " не найден");
+        }
+    }
+
+    public void validateDirectorName (DirectorDto directorDto) {
+        if (directorDto.getName() == null || directorDto.getName().trim().isEmpty()) {
+            throw new ValidationException("Имя режиссера не может быть пустым");
+        }
+    }
+
+    public void validationOnDeletionDirector (Integer directorId) {
+        if (!directorRepository.existsById(directorId)) {
+            log.warn("Попытка удалениея несуществующего режиссера с id={}",  directorId);
+            throw new NotFoundException("Режиссер с id " + directorId + " не найден");
+        }
+    }
+
+    public void validationOnUpdateDirector(DirectorDto directorDto) {
+        validateDirectorName(directorDto);
+        if (directorDto.getId() == null || !directorRepository.existsById(directorDto.getId())) {
+            log.warn("Попытка обновления несуществующего режиссера с id={}", directorDto.getId());
+            throw new NotFoundException("Режиссер с id " + directorDto.getId() + " не найден");
+        }
+    }
+
+    public void validateDirectorsByIds(Collection<DirectorDto> directors) {
+        if (directors == null || directors.isEmpty()) {
+            return;
+        }
+
+        Set<Integer> requestedIds = directors.stream()
+                .map(DirectorDto::getId)
+                .collect(Collectors.toSet());
+
+        Set<Integer> existingIds = directorRepository.findExistingIds(requestedIds);
+
+        if (existingIds.size() != requestedIds.size()) {
+            Set<Integer> notFoundIds = new HashSet<>(requestedIds);
+            notFoundIds.removeAll(existingIds);
+            throw new NotFoundException("Режиссёры с ID " + notFoundIds + " не найдены");
         }
     }
 }

@@ -5,8 +5,8 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mappers.DirectorRowMapper;
 import ru.yandex.practicum.filmorate.model.Director;
 
-import java.util.Collection;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 public class DirectorRepository extends BaseRepository<Director> {
@@ -45,4 +45,25 @@ public class DirectorRepository extends BaseRepository<Director> {
         delete("DELETE FROM directors WHERE id = ?", id);
     }
 
+    public Set<Integer> findExistingIds(Collection<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        String sql = "SELECT id FROM directors WHERE id IN (" +
+                ids.stream().map(String::valueOf).collect(Collectors.joining(",")) + ")";
+
+        List<Integer> existingIds = jdbc.queryForList(sql, Integer.class);
+        return new HashSet<>(existingIds);
+    }
+
+    public boolean existsAllByIds(Collection<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return true;
+        }
+
+        Set<Integer> existingIds = findExistingIds(ids);
+        return existingIds.size() == ids.size();
+    }
 }
+
