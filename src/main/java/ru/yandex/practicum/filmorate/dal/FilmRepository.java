@@ -16,6 +16,21 @@ import java.util.stream.Collectors;
 @Repository
 public class FilmRepository extends BaseRepository<Film> {
     private final JdbcTemplate jdbc;
+    private final static String POPULAR_FILM_BASE = "SELECT f.id, f.name, f.description, f.release_date, " +
+            "f.duration, f.mpa_rating_id, m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +
+            "FROM films f " +
+            "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
+            "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
+            "%s " +
+            "%s " +
+            "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, m.name " +
+            "ORDER BY likes_count DESC " +
+            "%s ";
+
+    private final static String FILM_BASE = "SELECT f.id, f.name, f.description, f.release_date, " +
+            "f.duration, f.mpa_rating_id, m.name AS mpa_name " +
+            "FROM films f " +
+            "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id ";
 
     public FilmRepository(JdbcTemplate jdbc, FilmRowMapper mapper) {
         super(jdbc, mapper);
@@ -23,19 +38,12 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Collection<Film> findAll() {
-        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
-                "m.name AS mpa_name " +
-                "FROM films f " +
-                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id";
+        String sql = FILM_BASE;
         return findManyWithDetails(sql);
     }
 
     public Optional<Film> findById(Integer id) {
-        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
-                "m.name AS mpa_name " +
-                "FROM films f " +
-                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
-                "WHERE f.id = ?";
+        String sql = FILM_BASE + "WHERE f.id = ?";
         return findOneWithDetails(sql, id);
     }
 
@@ -84,10 +92,7 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Collection<Film> getLikedFilmsByUser(Integer userId) {
-        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
-                "m.name AS mpa_name " +
-                "FROM films f " +
-                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
+        String sql = FILM_BASE +
                 "JOIN film_likes fl ON f.id = fl.film_id " +
                 "WHERE fl.user_id = ? ";
         return findManyWithDetails(sql, userId);
@@ -98,36 +103,23 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Collection<Film> getPopularFilms(Integer count) {
-        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
-                "m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +
-                "FROM films f " +
-                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
-                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
-                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, m.name " +
-                "ORDER BY likes_count DESC LIMIT ?";
+        String sql = String.format(POPULAR_FILM_BASE, "", "", "LIMIT ? ");
+
+
         return findManyWithDetails(sql, count);
     }
+
 
     public Collection<Film> getFilmsByDirectorId(Integer directorId, String sortBy) {
         String sql;
         if ("year".equalsIgnoreCase(sortBy)) {
-            sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
-                    "m.name AS mpa_name " +
-                    "FROM films f " +
-                    "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
+            sql = FILM_BASE +
                     "JOIN film_directors fd ON f.id = fd.film_id " +
                     "WHERE fd.director_id = ? " +
                     "ORDER BY EXTRACT(YEAR FROM f.release_date) ASC";
         } else if ("likes".equalsIgnoreCase(sortBy)) {
-            sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
-                    "m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +
-                    "FROM films f " +
-                    "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
-                    "JOIN film_directors fd ON f.id = fd.film_id " +
-                    "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
-                    "WHERE fd.director_id = ? " +
-                    "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, m.name " +
-                    "ORDER BY likes_count DESC";
+            sql = String.format(POPULAR_FILM_BASE, "JOIN film_directors fd ON f.id = fd.film_id ",
+                    "WHERE fd.director_id = ? ", "");
         } else {
             throw new IllegalArgumentException("Некорректный параметр сортировки: " + sortBy);
         }
@@ -135,15 +127,8 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Collection<Film> getPopularFilmsByGenreAndYear(Integer count, Integer genreId, Integer year) {
-        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
-                "m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +
-                "FROM films f " +
-                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
-                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
-                "JOIN film_genres fg ON f.id = fg.film_id " +
-                "WHERE fg.genre_id = ? AND EXTRACT(YEAR FROM f.release_date) = ? " +
-                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, m.name " +
-                "ORDER BY likes_count DESC LIMIT ?";
+        String sql = String.format(POPULAR_FILM_BASE, "JOIN film_genres fg ON f.id = fg.film_id ",
+                "WHERE fg.genre_id = ? AND EXTRACT(YEAR FROM f.release_date) = ? ", "LIMIT ? ");
 
         Collection<Film> popular = findMany(sql, genreId, year, count);
 
@@ -154,14 +139,9 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Collection<Film> getPopularFilmsByYear(Integer count, Integer year) {
-        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
-                "m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +
-                "FROM films f " +
-                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
-                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
-                "WHERE EXTRACT(YEAR FROM f.release_date) = ? " +
-                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, m.name " +
-                "ORDER BY likes_count DESC LIMIT ?";
+        String sql = String.format(POPULAR_FILM_BASE, "", "WHERE EXTRACT(YEAR FROM f.release_date) = ? ",
+                "LIMIT ? ");
+
         Collection<Film> popular = findMany(sql, year, count);
         loadGenresForFilms(popular);
         loadDirectorForFilms(popular);
@@ -169,15 +149,9 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Collection<Film> getPopularFilmsByGenre(Integer count, Integer genreId) {
-        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
-                "m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +
-                "FROM films f " +
-                "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
-                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
-                "JOIN film_genres fg ON f.id = fg.film_id " +
-                "WHERE fg.genre_id = ? " +
-                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, m.name " +
-                "ORDER BY likes_count DESC LIMIT ?";
+        String sql = String.format(POPULAR_FILM_BASE, "JOIN film_genres fg ON f.id = fg.film_id ",
+                "WHERE fg.genre_id = ? ", "LIMIT ? ");
+
         Collection<Film> popular = findMany(sql, genreId, count);
         loadGenresForFilms(popular);
         loadDirectorForFilms(popular);
@@ -310,15 +284,9 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Collection<Film> getCommonFilms(Integer userId, Integer friendId) {
-        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, " +
-                "mr.name as mpa_name, COUNT(fl.user_id) AS likes_count " +
-                "FROM films f " +
-                "LEFT JOIN mpa_ratings mr ON f.mpa_rating_id = mr.id " +
-                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
-                "WHERE f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?) " +
-                "  AND f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?) " +
-                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, mr.name " +
-                "ORDER BY likes_count DESC";
+        String sql = String.format(POPULAR_FILM_BASE, "WHERE f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?) ",
+                " AND f.id IN (SELECT film_id FROM film_likes WHERE user_id = ?) ", "");
+
         return findManyWithDetails(sql, userId, friendId);
     }
 
