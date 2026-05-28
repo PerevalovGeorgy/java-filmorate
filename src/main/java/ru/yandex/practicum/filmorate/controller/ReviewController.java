@@ -65,7 +65,7 @@ public class ReviewController {
     public ResponseEntity<Void> deleteLike(@PathVariable Integer id, @PathVariable Integer userId) {
         log.info("Получен запрос DELETE /reviews/{}/like/{} (удаление лайка)", id, userId);
         reviewService.deleteLike(id, userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}/dislike/{userId}")
@@ -79,6 +79,6 @@ public class ReviewController {
     public ResponseEntity<Void> deleteDislike(@PathVariable Integer id, @PathVariable Integer userId) {
         log.info("Получен запрос DELETE /reviews/{}/dislike/{} (удаление дизлайка)", id, userId);
         reviewService.deleteDislike(id, userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 }
