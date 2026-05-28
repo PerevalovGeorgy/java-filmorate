@@ -238,9 +238,14 @@ public class FilmRepository extends BaseRepository<Film> {
         if (films.isEmpty()) {
             return;
         }
+        String filmIds = films.stream()
+                .map(Film::getId)
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
         String sql = "SELECT fg.film_id, fg.genre_id, g.name AS genre_name " +
                 "FROM film_genres fg " +
                 "JOIN genres g ON fg.genre_id = g.id " +
+                "WHERE fg.film_id IN (" + filmIds + ") " +
                 "ORDER BY fg.genre_id";
         Map<Integer, LinkedHashSet<Genre>> map = new HashMap<>();
         jdbc.query(sql, (rs) -> {

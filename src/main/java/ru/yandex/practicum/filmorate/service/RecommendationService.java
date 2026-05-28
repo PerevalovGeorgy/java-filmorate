@@ -76,7 +76,7 @@ public class RecommendationService {
             return Collections.emptyList();
         }
         Collection<User> similarUsers = userRepository.findUsersWithMostCommonLikes(id);
-        
+
         return similarUsers.stream()
                 .map(userMapper::toDto)
                 .collect(Collectors.toList());
