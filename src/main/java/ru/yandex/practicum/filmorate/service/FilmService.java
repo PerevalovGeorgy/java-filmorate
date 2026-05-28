@@ -16,7 +16,6 @@ import ru.yandex.practicum.filmorate.model.Film;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 @Slf4j
@@ -24,7 +23,6 @@ import java.util.stream.Stream;
 public class FilmService {
     private final FilmRepository filmRepository;
     private final UserRepository userRepository;
-    private final DirectorRepository directorRepository;
     private final UserService userService;
     private final FilmMapper filmMapper;
     private final MpaRepository mpaRepository;
@@ -75,9 +73,7 @@ public class FilmService {
         if (dto.getId() == null) {
             throw new ValidationException("Id должен быть указан");
         }
-        if (!filmRepository.existsById(dto.getId())) {
-            throw new MoviePresenceInListException("Фильм с id = " + dto.getId() + " не найден");
-        }
+        validateFilmIdOnUpdate(dto.getId());
 
         validateFilmDatesAndConstraints(dto.getName(), dto.getReleaseDate(), dto.getDuration());
         validateMpaRatingUpdate(dto);
