@@ -335,7 +335,6 @@ public class FilmRepository extends BaseRepository<Film> {
 
         loadGenresForFilms(searched);
         loadDirectorForFilms(searched);
-
         return searched;
     }
 
