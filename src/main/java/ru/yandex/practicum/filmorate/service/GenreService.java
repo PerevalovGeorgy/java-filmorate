@@ -9,6 +9,8 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mapper.GenreMapper;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -33,5 +35,23 @@ public class GenreService {
                     log.warn("Жанр с id={} не найден", id);
                     return new NotFoundException("Жанр с id " + id + " не найден");
                 });
+    }
+
+    public void validateGenresByIds(Collection<GenreDto> genres) {
+        if (genres == null || genres.isEmpty()) {
+            return;
+        }
+
+        Set<Integer> requestedIds = genres.stream()
+                .map(GenreDto::getId)
+                .collect(Collectors.toSet());
+
+        Set<Integer> existingIds = genreRepository.findExistingIds(requestedIds);
+
+        if (existingIds.size() != requestedIds.size()) {
+            Set<Integer> notFoundIds = new HashSet<>(requestedIds);
+            notFoundIds.removeAll(existingIds);
+            throw new NotFoundException("Жанры с ID " + notFoundIds + " не найдены");
+        }
     }
 }
