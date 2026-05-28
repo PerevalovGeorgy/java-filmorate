@@ -356,4 +356,26 @@ public class FilmRepository extends BaseRepository<Film> {
         return film;
     }
 
+    public Map<Integer, Set<Integer>> getLikedFilmIdsGroupedByUsers(List<Integer> userIds) {
+        if (userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        String userIdsStr = userIds.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+
+        String sql = "SELECT fl.user_id, fl.film_id " +
+                "FROM film_likes fl " +
+                "WHERE fl.user_id IN (" + userIdsStr + ")";
+
+        Map<Integer, Set<Integer>> result = new HashMap<>();
+        jdbc.query(sql, (rs) -> {
+            int userId = rs.getInt("user_id");
+            int filmId = rs.getInt("film_id");
+            result.computeIfAbsent(userId, k -> new HashSet<>()).add(filmId);
+        });
+
+        return result;
+    }
 }
