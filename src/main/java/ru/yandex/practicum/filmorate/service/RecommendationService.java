@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -23,6 +24,25 @@ public class RecommendationService {
     private final UserRepository userRepository;
     private final FilmMapper filmMapper;
     private final UserMapper userMapper;
+
+    public Collection<FilmDto> recommendedFilms(Integer userId) {
+        log.info("Вызван метод по рекомендации фильма по id={}", userId);
+        if (!userRepository.existsById(userId)) {
+            log.warn("Пользователь с id {} не найден", userId);
+            return Collections.emptyList();
+        }
+        Collection<UserDto> similarUsers = findUsersWithMaxLikeOverlap(userId);
+        if (similarUsers.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Set<FilmDto> allRecommendations = new LinkedHashSet<>();
+        for (UserDto similarUser : similarUsers) {
+            allRecommendations.addAll(getFilmsOnlyUserLikes(similarUser.getId(), userId));
+        }
+
+        return new ArrayList<>(allRecommendations);
+    }
 
     protected Collection<FilmDto> getFilmsOnlyUserLikes(Integer user1Id, Integer user2Id) {
         Collection<Film> user1Films = filmRepository.getLikedFilmsByUser(user1Id);
@@ -45,25 +65,6 @@ public class RecommendationService {
                 .collect(Collectors.toList());
     }
 
-    public Collection<FilmDto> recommendedFilms(Integer userId) {
-        log.info("Вызван метод по рекомендации фильма по id={}", userId);
-        if (!userRepository.existsById(userId)) {
-            log.warn("Пользователь с id {} не найден", userId);
-            return Collections.emptyList();
-        }
-        Collection<UserDto> similarUsers = findUsersWithMaxLikeOverlap(userId);
-        if (similarUsers.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        Set<FilmDto> allRecommendations = new LinkedHashSet<>();
-        for (UserDto similarUser : similarUsers) {
-            allRecommendations.addAll(getFilmsOnlyUserLikes(similarUser.getId(), userId));
-        }
-
-        return new ArrayList<>(allRecommendations);
-    }
-
     protected Collection<UserDto> findUsersWithMaxLikeOverlap(Integer id) {
         log.info("Использован метод на получение максимально похожих пользователей по id={}", id);
         if (!userRepository.existsById(id)) {
@@ -74,21 +75,10 @@ public class RecommendationService {
             log.info("Для пользователя {} не найдено похожих пользователей", id);
             return Collections.emptyList();
         }
-
-
-        return userRepository.findAll().stream()
-                .filter(user1 -> !user1.getId().equals(id))
-                .filter(user -> {
-                    return filmRepository.getLikedFilmsByUser(user.getId()).stream()
-                            .anyMatch(likedFilms::contains);
-                })
-
-                .sorted(Comparator.comparing(
-                        user1 -> filmRepository.getLikedFilmsByUser(user1.getId()).stream()
-                                .filter(likedFilms::contains)
-                                .count(), Comparator.reverseOrder()
-                ))
+        Collection<User> similarUsers = userRepository.findUsersWithMostCommonLikes(id);
+        
+        return similarUsers.stream()
                 .map(userMapper::toDto)
-                .toList();
+                .collect(Collectors.toList());
     }
 }

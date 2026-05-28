@@ -73,4 +73,16 @@ public class UserRepository extends BaseRepository<User> {
         jdbc.update(sql, userId, friendId);
     }
 
+    public Collection<User> findUsersWithMostCommonLikes(Integer userId) {
+        String sql = "SELECT u.id, u.email, u.login, u.name, u.birthday," +
+                "COUNT(fl2.film_id) AS common_likes FROM users u " +
+                "JOIN film_likes fl1 ON fl1.user_id = ? " +
+                "JOIN film_likes fl2 ON fl2.film_id = fl1.film_id AND fl2.user_id = u.id " +
+                "WHERE u.id != ? " +
+                "GROUP BY u.id, u.email, u.login, u.name, u.birthday " +
+                "HAVING common_likes > 0 " +
+                "ORDER BY common_likes DESC ";
+
+        return findMany(sql, userId);
+    }
 }
