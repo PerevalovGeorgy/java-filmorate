@@ -70,14 +70,37 @@ public class RecommendationService {
         if (!userRepository.existsById(id)) {
             return Collections.emptyList();
         }
-        Collection<Film> likedFilms = filmRepository.getLikedFilmsByUser(id);
-        if (likedFilms == null || likedFilms.isEmpty()) {
+
+        Set<Integer> likedFilmIds = filmRepository.getLikedFilmsByUser(id).stream()
+                .map(Film::getId)
+                .collect(Collectors.toSet());
+
+        if (likedFilmIds.isEmpty()) {
             log.info("Для пользователя {} не найдено похожих пользователей", id);
             return Collections.emptyList();
         }
-        Collection<User> similarUsers = userRepository.findUsersWithMostCommonLikes(id);
 
-        return similarUsers.stream()
+        Collection<User> allUsers = userRepository.findAll();
+        List<Integer> otherUserIds = allUsers.stream()
+                .filter(u -> !u.getId().equals(id))
+                .map(User::getId)
+                .collect(Collectors.toList());
+
+        Map<Integer, Set<Integer>> userFilmsMap = filmRepository.getLikedFilmIdsGroupedByUsers(otherUserIds);
+
+        return allUsers.stream()
+                .filter(u -> !u.getId().equals(id))
+                .filter(u -> {
+                    Set<Integer> userFilms = userFilmsMap.getOrDefault(u.getId(), Set.of());
+                    return userFilms.stream().anyMatch(likedFilmIds::contains);
+                })
+                .sorted((u1, u2) -> {
+                    long count1 = userFilmsMap.getOrDefault(u1.getId(), Set.of())
+                            .stream().filter(likedFilmIds::contains).count();
+                    long count2 = userFilmsMap.getOrDefault(u2.getId(), Set.of())
+                            .stream().filter(likedFilmIds::contains).count();
+                    return Long.compare(count2, count1);
+                })
                 .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }

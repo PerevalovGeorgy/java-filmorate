@@ -238,14 +238,9 @@ public class FilmRepository extends BaseRepository<Film> {
         if (films.isEmpty()) {
             return;
         }
-        String filmIds = films.stream()
-                .map(Film::getId)
-                .map(String::valueOf)
-                .collect(Collectors.joining(","));
         String sql = "SELECT fg.film_id, fg.genre_id, g.name AS genre_name " +
                 "FROM film_genres fg " +
                 "JOIN genres g ON fg.genre_id = g.id " +
-                "WHERE fg.film_id IN (" + filmIds + ") " +
                 "ORDER BY fg.genre_id";
         Map<Integer, LinkedHashSet<Genre>> map = new HashMap<>();
         jdbc.query(sql, (rs) -> {
@@ -340,6 +335,7 @@ public class FilmRepository extends BaseRepository<Film> {
 
         loadGenresForFilms(searched);
         loadDirectorForFilms(searched);
+
         return searched;
     }
 
@@ -360,4 +356,26 @@ public class FilmRepository extends BaseRepository<Film> {
         return film;
     }
 
+    public Map<Integer, Set<Integer>> getLikedFilmIdsGroupedByUsers(List<Integer> userIds) {
+        if (userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        String userIdsStr = userIds.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+
+        String sql = "SELECT fl.user_id, fl.film_id " +
+                "FROM film_likes fl " +
+                "WHERE fl.user_id IN (" + userIdsStr + ")";
+
+        Map<Integer, Set<Integer>> result = new HashMap<>();
+        jdbc.query(sql, (rs) -> {
+            int userId = rs.getInt("user_id");
+            int filmId = rs.getInt("film_id");
+            result.computeIfAbsent(userId, k -> new HashSet<>()).add(filmId);
+        });
+
+        return result;
+    }
 }
