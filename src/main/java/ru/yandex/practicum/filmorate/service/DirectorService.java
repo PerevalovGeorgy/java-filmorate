@@ -73,13 +73,13 @@ public class DirectorService {
         }
     }
 
-    public void validateDirectorName (DirectorDto directorDto) {
+    public void validateDirectorName(DirectorDto directorDto) {
         if (directorDto.getName() == null || directorDto.getName().trim().isEmpty()) {
             throw new ValidationException("Имя режиссера не может быть пустым");
         }
     }
 
-    public void validationOnDeletionDirector (Integer directorId) {
+    public void validationOnDeletionDirector(Integer directorId) {
         if (!directorRepository.existsById(directorId)) {
             log.warn("Попытка удалениея несуществующего режиссера с id={}",  directorId);
             throw new NotFoundException("Режиссер с id " + directorId + " не найден");
