@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @Repository
 public class FilmRepository extends BaseRepository<Film> {
     private final JdbcTemplate jdbc;
-    private final static String POPULAR_FILM_BASE = "SELECT f.id, f.name, f.description, f.release_date, " +
+    private static final String POPULAR_FILM_BASE = "SELECT f.id, f.name, f.description, f.release_date, " +
             "f.duration, f.mpa_rating_id, m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +
             "FROM films f " +
             "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id " +
@@ -27,7 +27,7 @@ public class FilmRepository extends BaseRepository<Film> {
             "ORDER BY likes_count DESC " +
             "%s ";
 
-    private final static String FILM_BASE = "SELECT f.id, f.name, f.description, f.release_date, " +
+    private static final String FILM_BASE = "SELECT f.id, f.name, f.description, f.release_date, " +
             "f.duration, f.mpa_rating_id, m.name AS mpa_name " +
             "FROM films f " +
             "LEFT JOIN mpa_ratings m ON f.mpa_rating_id = m.id ";
