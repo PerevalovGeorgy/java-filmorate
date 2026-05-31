@@ -1,5 +1,7 @@
 package ru.yandex.practicum.filmorate.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import java.time.LocalDate;
@@ -29,4 +31,9 @@ public class UpdateFilmDto {
 
     @Builder.Default
     private LinkedHashSet<GenreDto> genres = new LinkedHashSet<>();
+
+    @JsonProperty("directors")
+    @JsonAlias("director")
+    @Builder.Default
+    private LinkedHashSet<DirectorDto> director = new LinkedHashSet<>();
 }

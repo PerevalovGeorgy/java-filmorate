@@ -42,7 +42,7 @@ public class UserRepository extends BaseRepository<User> {
     }
 
     public void deleteById(Integer id) {
-        delete("DELETE FROM users WHERE id = ?", id);
+        update("DELETE FROM users WHERE id = ?", id);
     }
 
     public void addFriend(Integer userId, Integer friendId) {
@@ -64,5 +64,25 @@ public class UserRepository extends BaseRepository<User> {
                 "JOIN friendships f2 ON u.id = f2.friend_id " +
                 "WHERE f1.user_id = ? AND f2.user_id = ?";
         return findMany(sql, userId, otherId);
+    }
+
+    public void confirmFriendship(Integer userId, Integer friendId) {
+        String sql = "UPDATE friendships " +
+                "SET friendship_status_id = (SELECT id FROM friendship_statuses WHERE name = 'CONFIRMED') " +
+                "WHERE user_id = ? AND friend_id = ?";
+        jdbc.update(sql, userId, friendId);
+    }
+
+    public Collection<User> findUsersWithMostCommonLikes(Integer userId) {
+        String sql = "SELECT u.id, u.email, u.login, u.name, u.birthday," +
+                "COUNT(fl2.film_id) AS common_likes FROM users u " +
+                "JOIN film_likes fl1 ON fl1.user_id = ? " +
+                "JOIN film_likes fl2 ON fl2.film_id = fl1.film_id AND fl2.user_id = u.id " +
+                "WHERE u.id != ? " +
+                "GROUP BY u.id, u.email, u.login, u.name, u.birthday " +
+                "HAVING common_likes > 0 " +
+                "ORDER BY common_likes DESC ";
+
+        return findMany(sql, userId);
     }
 }
